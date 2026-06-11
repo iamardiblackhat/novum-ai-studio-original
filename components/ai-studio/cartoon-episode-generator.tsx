@@ -27,6 +27,7 @@ import {
   Save,
   Loader2,
   Upload,
+  Maximize2,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";

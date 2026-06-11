@@ -25,6 +25,7 @@ import {
   Star,
   Compass,
   ArrowUpRight,
+  PenTool,
 } from "lucide-react";
 import {
   Sidebar,

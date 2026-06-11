@@ -29,11 +29,14 @@ import {
   CheckCircle2,
   Loader2,
   ArrowRight,
+  Bot,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 
@@ -266,7 +269,9 @@ export function AutomationsBuilder() {
                 placeholder="Describe a new agentic pipeline..."
                 className="min-h-[100px] rounded-2xl border-2 bg-background focus-visible:ring-primary/20 resize-none text-sm font-medium"
                 value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                  setPrompt(e.target.value)
+                }
               />
             </div>
             <Button
