@@ -1,147 +1,118 @@
 'use client'
 
 import { useState } from 'react'
-import { Code2, Eye, Copy, Download, RefreshCw, ExternalLink, Smartphone, Monitor, Tablet } from 'lucide-react'
+import { Code2, Monitor, Smartphone, Tablet, RefreshCw, Download, Loader2, ExternalLink } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Badge } from '@/components/ui/badge'
 import { ChatInterface, Model } from './chat-interface'
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@/components/ui/tabs'
 
-const webBuilderModels: Model[] = [
-  // Local / Ollama
-  { id: 'ollama-codellama', name: 'CodeLlama 34B', provider: 'ollama', badge: 'Local' },
-  { id: 'ollama-deepseek', name: 'DeepSeek Coder', provider: 'ollama', badge: 'Local' },
-  { id: 'ollama-qwen', name: 'Qwen 2.5 Coder', provider: 'ollama', badge: 'Local' },
-  // Groq
-  { id: 'groq-llama', name: 'Llama 3.1 70B', provider: 'groq', badge: 'Fast', requiresKey: true },
-  { id: 'groq-mixtral', name: 'Mixtral 8x7B', provider: 'groq', badge: 'Fast', requiresKey: true },
-  // OpenRouter
-  { id: 'openrouter-claude', name: 'Claude 3.5 Sonnet', provider: 'openrouter', badge: 'Best', requiresKey: true },
-  { id: 'openrouter-gpt4', name: 'GPT-4 Turbo', provider: 'openrouter', badge: 'Premium', requiresKey: true },
-  { id: 'openrouter-deepseek', name: 'DeepSeek V3', provider: 'openrouter', badge: 'Code', requiresKey: true },
-  // Direct API
-  { id: 'openai-gpt4', name: 'GPT-4o', provider: 'openai', badge: 'Premium', requiresKey: true },
-  { id: 'anthropic-claude', name: 'Claude 3.5', provider: 'anthropic', badge: 'Best', requiresKey: true },
+const webModels: Model[] = [
+  { id: 'deepseek-coder', name: 'DeepSeek Coder', provider: 'local', badge: 'Free' },
+  { id: 'codellama', name: 'Code Llama', provider: 'ollama', badge: 'Free' },
+  { id: 'llama3', name: 'Llama 3', provider: 'ollama', badge: 'Free' },
+  { id: 'gpt-4o', name: 'GPT-4o', provider: 'openai', badge: 'Best', requiresKey: true },
+  { id: 'claude-sonnet', name: 'Claude Sonnet', provider: 'anthropic', badge: 'Best', requiresKey: true },
 ]
 
 const suggestedPrompts = [
-  'Build a SaaS landing page',
-  'Create a dashboard with charts',
-  'Design a pricing page',
-  'Make a contact form',
-  'Build an e-commerce product page',
-  'Create a blog layout',
+  'Build a landing page for a SaaS product',
+  'Create a portfolio website',
+  'Build a dashboard with charts',
+  'Create a pricing page with 3 tiers',
+  'Build a contact form with validation',
+  'Create a blog homepage',
 ]
 
-export function WebBuilder() {
-  const [activeTab, setActiveTab] = useState('preview')
-  const [viewportSize, setViewportSize] = useState<'desktop' | 'tablet' | 'mobile'>('desktop')
-  const [generatedCode, setGeneratedCode] = useState<string>('')
+type Viewport = 'desktop' | 'tablet' | 'mobile'
 
-  const viewportWidths = {
-    desktop: 'w-full',
-    tablet: 'w-[768px]',
-    mobile: 'w-[375px]',
-  }
+const viewportWidths: Record<Viewport, string> = {
+  desktop: '100%',
+  tablet: '768px',
+  mobile: '375px',
+}
+
+export function WebBuilder() {
+  const [generatedCode, setGeneratedCode] = useState('')
+  const [activeTab, setActiveTab] = useState<'preview' | 'code'>('preview')
+  const [viewport, setViewport] = useState<Viewport>('desktop')
 
   return (
     <ChatInterface
-      models={webBuilderModels}
-      defaultModel="ollama-codellama"
+      models={webModels}
+      defaultModel="deepseek-coder"
       placeholder="Describe the website or component you want to build..."
       welcomeTitle="Web Builder"
-      welcomeDescription="Describe your website, landing page, or component and I'll generate the code for you."
+      welcomeDescription="Describe any webpage and AI will generate the HTML, CSS and JavaScript for you."
       suggestedPrompts={suggestedPrompts}
-      showAttachments={true}
-      attachmentTypes={['image', 'file']}
+      showAttachments={false}
+      apiEndpoint="chat"
     >
-      {/* Preview Panel */}
       <Card className="flex flex-col h-full overflow-hidden">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col h-full">
-          <div className="flex items-center justify-between border-b border-border px-4 py-2">
-            <TabsList className="bg-transparent">
-              <TabsTrigger value="preview" className="gap-2">
-                <Eye className="h-4 w-4" />
-                Preview
-              </TabsTrigger>
-              <TabsTrigger value="code" className="gap-2">
-                <Code2 className="h-4 w-4" />
-                Code
-              </TabsTrigger>
+        <div className="flex items-center justify-between p-3 border-b border-border">
+          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'preview' | 'code')}>
+            <TabsList className="h-8">
+              <TabsTrigger value="preview" className="text-xs"><Monitor className="h-3 w-3 mr-1" />Preview</TabsTrigger>
+              <TabsTrigger value="code" className="text-xs"><Code2 className="h-3 w-3 mr-1" />Code</TabsTrigger>
             </TabsList>
-            <div className="flex items-center gap-1">
-              {activeTab === 'preview' && (
-                <>
-                  <Button
-                    variant={viewportSize === 'desktop' ? 'secondary' : 'ghost'}
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => setViewportSize('desktop')}
-                  >
-                    <Monitor className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant={viewportSize === 'tablet' ? 'secondary' : 'ghost'}
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => setViewportSize('tablet')}
-                  >
-                    <Tablet className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant={viewportSize === 'mobile' ? 'secondary' : 'ghost'}
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => setViewportSize('mobile')}
-                  >
-                    <Smartphone className="h-4 w-4" />
-                  </Button>
-                  <div className="w-px h-6 bg-border mx-1" />
-                </>
-              )}
-              <Button variant="ghost" size="icon" className="h-8 w-8">
-                <RefreshCw className="h-4 w-4" />
+          </Tabs>
+          <div className="flex items-center gap-1">
+            {(['desktop', 'tablet', 'mobile'] as Viewport[]).map((v) => (
+              <Button key={v} variant={viewport === v ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7" onClick={() => setViewport(v)}>
+                {v === 'desktop' ? <Monitor className="h-3 w-3" /> : v === 'tablet' ? <Tablet className="h-3 w-3" /> : <Smartphone className="h-3 w-3" />}
               </Button>
-              <Button variant="ghost" size="icon" className="h-8 w-8">
-                <Copy className="h-4 w-4" />
+            ))}
+            {generatedCode && (
+              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => {
+                const blob = new Blob([generatedCode], { type: 'text/html' })
+                const url = URL.createObjectURL(blob)
+                const a = document.createElement('a'); a.href = url; a.download = 'index.html'; a.click()
+              }}>
+                <Download className="h-3 w-3" />
               </Button>
-              <Button variant="ghost" size="icon" className="h-8 w-8">
-                <Download className="h-4 w-4" />
-              </Button>
-              <Button variant="ghost" size="icon" className="h-8 w-8">
-                <ExternalLink className="h-4 w-4" />
-              </Button>
-            </div>
+            )}
           </div>
-          <TabsContent value="preview" className="flex-1 m-0 overflow-auto bg-secondary/30">
-            <div className="h-full flex items-start justify-center p-4">
-              <div className={`bg-background border rounded-lg shadow-sm ${viewportWidths[viewportSize]} min-h-[400px] transition-all duration-300`}>
-                {generatedCode ? (
-                  <iframe
-                    srcDoc={generatedCode}
-                    className="w-full h-full min-h-[400px] rounded-lg"
-                    title="Preview"
-                  />
-                ) : (
-                  <div className="h-full min-h-[400px] flex items-center justify-center">
-                    <div className="text-center">
-                      <Eye className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                      <p className="text-muted-foreground">Preview will appear here</p>
-                      <p className="text-xs text-muted-foreground mt-1">Describe what you want to build</p>
-                    </div>
-                  </div>
-                )}
+        </div>
+
+        <div className="flex-1 overflow-hidden p-2">
+          {activeTab === 'preview' ? (
+            generatedCode ? (
+              <div className="h-full flex justify-center">
+                <iframe
+                  srcDoc={generatedCode}
+                  className="h-full border-0 rounded transition-all"
+                  style={{ width: viewportWidths[viewport] }}
+                  sandbox="allow-scripts"
+                  title="Preview"
+                />
               </div>
-            </div>
-          </TabsContent>
-          <TabsContent value="code" className="flex-1 m-0 overflow-auto">
-            <pre className="h-full p-4 text-sm font-mono bg-secondary/50 overflow-auto">
-              <code className="text-foreground">
-                {generatedCode || '// Your generated code will appear here\n// Start a conversation to build your website'}
-              </code>
-            </pre>
-          </TabsContent>
-        </Tabs>
+            ) : (
+              <div className="h-full flex flex-col items-center justify-center">
+                <Monitor className="h-12 w-12 text-muted-foreground mb-4" />
+                <p className="text-muted-foreground">Preview will appear here</p>
+                <p className="text-xs text-muted-foreground mt-1">Describe a website in the chat to get started</p>
+              </div>
+            )
+          ) : (
+            generatedCode ? (
+              <div className="h-full overflow-auto">
+                <pre className="text-xs p-3 bg-secondary rounded-lg h-full overflow-auto">
+                  <code>{generatedCode}</code>
+                </pre>
+              </div>
+            ) : (
+              <div className="h-full flex items-center justify-center">
+                <p className="text-muted-foreground text-sm">No code generated yet</p>
+              </div>
+            )
+          )}
+        </div>
       </Card>
     </ChatInterface>
   )
