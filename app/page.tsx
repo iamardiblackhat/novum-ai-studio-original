@@ -14,6 +14,8 @@ import { AgentsManager } from '@/components/ai-studio/agents-manager'
 import { WorkflowsManager } from '@/components/ai-studio/workflows-manager'
 import { AutonomousTasks } from '@/components/ai-studio/autonomous-tasks'
 import { TemplatesLibrary } from '@/components/ai-studio/templates-library'
+import { ThemesManager } from '@/components/ai-studio/themes-manager'
+import { LayoutsGallery } from '@/components/ai-studio/layouts-gallery'
 import { CartoonEpisodeGenerator } from '@/components/ai-studio/cartoon-episode-generator'
 import { PodcastStudio } from '@/components/ai-studio/podcast-studio'
 import { AutomationsBuilder } from '@/components/ai-studio/automations-builder'
@@ -67,36 +69,22 @@ export default function AIStudio() {
 
   const renderContent = () => {
     switch (activeSection) {
-      case 'web-builder':
-        return <WebBuilder />
-      case 'cartoon-gen':
-        return <CartoonEpisodeGenerator />
-      case 'podcast':
-        return <PodcastStudio />
-      case 'image-gen':
-        return <ImageGenerator />
-      case 'video-gen':
-        return <VideoGenerator />
-      case 'voice-clone':
-        return <VoiceCloning />
-      case 'music-gen':
-        return <MusicStudio />
-      case 'video-edit':
-        return <VideoEditor />
-      case 'agents':
-        return <AgentsManager />
-      case 'workflows':
-        return <WorkflowsManager />
-      case 'autonomous':
-        return <AutonomousTasks />
-      case 'automations':
-        return <AutomationsBuilder />
-      case 'templates':
-      case 'themes':
-      case 'layouts':
-        return <TemplatesLibrary />
-      default:
-        return <WebBuilder />
+      case 'web-builder': return <WebBuilder />
+      case 'cartoon-gen': return <CartoonEpisodeGenerator />
+      case 'podcast': return <PodcastStudio />
+      case 'image-gen': return <ImageGenerator />
+      case 'video-gen': return <VideoGenerator />
+      case 'voice-clone': return <VoiceCloning />
+      case 'music-gen': return <MusicStudio />
+      case 'video-edit': return <VideoEditor />
+      case 'agents': return <AgentsManager />
+      case 'workflows': return <WorkflowsManager />
+      case 'autonomous': return <AutonomousTasks />
+      case 'automations': return <AutomationsBuilder />
+      case 'templates': return <TemplatesLibrary />
+      case 'themes': return <ThemesManager />
+      case 'layouts': return <LayoutsGallery />
+      default: return <WebBuilder />
     }
   }
 
@@ -104,19 +92,14 @@ export default function AIStudio() {
     <SidebarProvider>
       <AppSidebar activeSection={activeSection} setActiveSection={setActiveSection} />
       <SidebarInset className="flex flex-col h-screen">
-        {/* Mobile Header */}
         <MobileHeader activeSection={activeSection} setActiveSection={setActiveSection} />
-        
-        {/* Desktop Header */}
         <header className="hidden md:flex h-14 shrink-0 items-center gap-2 border-b border-border px-4">
           <SidebarTrigger className="-ml-1" />
           <Separator orientation="vertical" className="mr-2 h-4" />
           <Breadcrumb>
             <BreadcrumbList>
               <BreadcrumbItem>
-                <span className="text-muted-foreground">
-                  {sectionCategories[activeSection]}
-                </span>
+                <span className="text-muted-foreground">{sectionCategories[activeSection]}</span>
               </BreadcrumbItem>
               <BreadcrumbSeparator />
               <BreadcrumbItem>
@@ -125,8 +108,6 @@ export default function AIStudio() {
             </BreadcrumbList>
           </Breadcrumb>
         </header>
-
-        {/* Main Content */}
         <main className="flex-1 overflow-auto p-4">
           {renderContent()}
         </main>
