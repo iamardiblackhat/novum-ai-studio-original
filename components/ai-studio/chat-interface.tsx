@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Send, Paperclip, Settings, ChevronDown, Plus, Sparkles, Bot, User, Key, Loader2, ImageIcon, X } from 'lucide-react'
+import { Send, Paperclip, Settings, ChevronDown, Plus, Sparkles, Bot, User, Key, Loader2, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
@@ -21,7 +21,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -43,7 +42,6 @@ export interface Message {
     type: 'image' | 'video' | 'audio' | 'code'
     url?: string
     code?: string
-    preview?: string
   }
   timestamp: Date
   isLoading?: boolean
@@ -56,11 +54,27 @@ interface ChatInterfaceProps {
   systemPrompt?: string
   showAttachments?: boolean
   attachmentTypes?: ('image' | 'file' | 'audio' | 'video')[]
-  onSend?: (message: string, model: string, attachments?: File[]) => void
+  apiEndpoint?: 'chat' | 'image' | 'audio' | 'music' | 'video'
   welcomeTitle?: string
   welcomeDescription?: string
   suggestedPrompts?: string[]
-  children?: React.ReactNode // For preview panels, etc.
+  children?: React.ReactNode
+}
+
+const providerLabels: Record<string, string> = {
+  ollama: 'Ollama (Local)',
+  groq: 'Groq',
+  openrouter: 'OpenRouter',
+  openai: 'OpenAI',
+  anthropic: 'Anthropic',
+  local: 'Local Models',
+  custom: 'Custom',
+  replicate: 'Replicate',
+  huggingface: 'Hugging Face',
+  elevenlabs: 'ElevenLabs',
+  suno: 'Suno AI',
+  runway: 'Runway',
+  stability: 'Stability AI',
 }
 
 export function ChatInterface({
@@ -69,6 +83,7 @@ export function ChatInterface({
   placeholder = 'Type your message...',
   showAttachments = true,
   attachmentTypes = ['image', 'file'],
+  apiEndpoint = 'chat',
   welcomeTitle = 'Start a Conversation',
   welcomeDescription = 'Describe what you want to create and AI will help you.',
   suggestedPrompts = [],
@@ -91,22 +106,6 @@ export function ChatInterface({
     return acc
   }, {} as Record<string, Model[]>)
 
-  const providerLabels: Record<string, string> = {
-    ollama: 'Ollama (Local)',
-    groq: 'Groq',
-    openrouter: 'OpenRouter',
-    openai: 'OpenAI',
-    anthropic: 'Anthropic',
-    local: 'Local Models',
-    custom: 'Custom',
-    replicate: 'Replicate',
-    huggingface: 'Hugging Face',
-    elevenlabs: 'ElevenLabs',
-    suno: 'Suno AI',
-    runway: 'Runway',
-    stability: 'Stability AI',
-  }
-
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight
@@ -116,7 +115,7 @@ export function ChatInterface({
   const handleSend = async () => {
     if (!input.trim() && pendingAttachments.length === 0) return
 
-    const newMessage: Message = {
+    const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
       content: input,
@@ -128,22 +127,98 @@ export function ChatInterface({
       timestamp: new Date(),
     }
 
-    setMessages(prev => [...prev, newMessage])
+    setMessages(prev => [...prev, userMessage])
+    const currentInput = input
     setInput('')
     setPendingAttachments([])
     setIsLoading(true)
 
-    // Simulate AI response
-    setTimeout(() => {
+    try {
+      let responseContent = ''
+      let generatedContent: Message['generatedContent'] | undefined
+
+      if (apiEndpoint === 'chat') {
+        const res = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            messages: [
+              ...messages.map(m => ({ role: m.role, content: m.content })),
+              { role: 'user', content: currentInput },
+            ],
+            model: selectedModel,
+          }),
+        })
+        const data = await res.json()
+        if (data.error) throw new Error(data.error)
+        responseContent = data.content
+
+      } else if (apiEndpoint === 'image') {
+        const res = await fetch('/api/image', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt: currentInput, model: selectedModel }),
+        })
+        const data = await res.json()
+        if (data.error) throw new Error(data.error)
+        responseContent = `Generated image for: "${currentInput}"`
+        generatedContent = { type: 'image', url: data.url }
+
+      } else if (apiEndpoint === 'audio') {
+        const res = await fetch('/api/audio', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: currentInput, voice: selectedModel }),
+        })
+        if (!res.ok) throw new Error(`Audio failed (${res.status})`)
+        const blob = await res.blob()
+        const url = URL.createObjectURL(blob)
+        responseContent = `Generated audio for: "${currentInput}"`
+        generatedContent = { type: 'audio', url }
+
+      } else if (apiEndpoint === 'music') {
+        const res = await fetch('/api/music', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt: currentInput, model: selectedModel }),
+        })
+        const data = await res.json()
+        if (data.error) throw new Error(data.error)
+        responseContent = `Generated music for: "${currentInput}"`
+        generatedContent = { type: 'audio', url: data.url }
+
+      } else if (apiEndpoint === 'video') {
+        const res = await fetch('/api/video', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt: currentInput, model: selectedModel }),
+        })
+        const data = await res.json()
+        if (data.error) throw new Error(data.error)
+        responseContent = `Generated video for: "${currentInput}"`
+        generatedContent = { type: 'video', url: data.url }
+      }
+
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: `I understand you want to: "${input}". I'm using ${currentModel?.name} to help you with this. This is a demo response - connect the actual AI backend to enable real generations.`,
+        content: responseContent,
+        generatedContent,
         timestamp: new Date(),
       }
       setMessages(prev => [...prev, assistantMessage])
+
+    } catch (err: unknown) {
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: `Error: ${err instanceof Error ? err.message : 'Something went wrong. Make sure Ollama is running.'}`,
+        timestamp: new Date(),
+      }
+      setMessages(prev => [...prev, errorMessage])
+    } finally {
       setIsLoading(false)
-    }, 1500)
+    }
   }
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -156,13 +231,8 @@ export function ChatInterface({
     setPendingAttachments(prev => prev.filter((_, i) => i !== index))
   }
 
-  const handleSuggestedPrompt = (prompt: string) => {
-    setInput(prompt)
-  }
-
   return (
     <div className="flex h-full flex-col lg:flex-row gap-4">
-      {/* Chat Section */}
       <div className="flex flex-1 flex-col min-w-0">
         {/* Model Selector */}
         <div className="mb-4 flex items-center justify-between gap-2">
@@ -172,9 +242,7 @@ export function ChatInterface({
                 <Bot className="h-4 w-4" />
                 <span className="truncate max-w-[150px]">{currentModel?.name || 'Select Model'}</span>
                 {currentModel?.badge && (
-                  <Badge variant="secondary" className="text-[10px]">
-                    {currentModel.badge}
-                  </Badge>
+                  <Badge variant="secondary" className="text-[10px]">{currentModel.badge}</Badge>
                 )}
                 <ChevronDown className="h-4 w-4 ml-1" />
               </Button>
@@ -192,16 +260,9 @@ export function ChatInterface({
                       className="flex items-center justify-between"
                     >
                       <span>{model.name}</span>
-                      <div className="flex items-center gap-1">
-                        {model.badge && (
-                          <Badge variant="secondary" className="text-[10px]">
-                            {model.badge}
-                          </Badge>
-                        )}
-                        {model.requiresKey && !apiKeys[model.provider] && (
-                          <Key className="h-3 w-3 text-muted-foreground" />
-                        )}
-                      </div>
+                      {model.badge && (
+                        <Badge variant="secondary" className="text-[10px]">{model.badge}</Badge>
+                      )}
                     </DropdownMenuItem>
                   ))}
                   <DropdownMenuSeparator />
@@ -229,19 +290,11 @@ export function ChatInterface({
                   <Sparkles className="h-8 w-8 text-primary" />
                 </div>
                 <h3 className="text-lg font-semibold mb-2">{welcomeTitle}</h3>
-                <p className="text-muted-foreground max-w-sm mb-6">
-                  {welcomeDescription}
-                </p>
+                <p className="text-muted-foreground max-w-sm mb-6">{welcomeDescription}</p>
                 {suggestedPrompts.length > 0 && (
                   <div className="flex flex-wrap justify-center gap-2 max-w-lg">
                     {suggestedPrompts.map((prompt, i) => (
-                      <Button
-                        key={i}
-                        variant="outline"
-                        size="sm"
-                        className="text-xs"
-                        onClick={() => handleSuggestedPrompt(prompt)}
-                      >
+                      <Button key={i} variant="outline" size="sm" className="text-xs" onClick={() => setInput(prompt)}>
                         {prompt}
                       </Button>
                     ))}
@@ -250,10 +303,7 @@ export function ChatInterface({
               </div>
             ) : (
               messages.map((message) => (
-                <div
-                  key={message.id}
-                  className={`flex gap-3 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                >
+                <div key={message.id} className={`flex gap-3 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                   {message.role === 'assistant' && (
                     <Avatar className="h-8 w-8 shrink-0">
                       <AvatarFallback className="bg-primary text-primary-foreground">
@@ -261,17 +311,13 @@ export function ChatInterface({
                       </AvatarFallback>
                     </Avatar>
                   )}
-                  <div
-                    className={`max-w-[80%] rounded-2xl px-4 py-3 ${
-                      message.role === 'user'
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-muted'
-                    }`}
-                  >
+                  <div className={`max-w-[80%] rounded-2xl px-4 py-3 ${
+                    message.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'
+                  }`}>
                     {message.attachments && message.attachments.length > 0 && (
                       <div className="flex flex-wrap gap-2 mb-2">
                         {message.attachments.map((att, i) => (
-                          <div key={i} className="relative">
+                          <div key={i}>
                             {att.type === 'image' ? (
                               <img src={att.url} alt={att.name} className="h-20 w-20 rounded object-cover" />
                             ) : (
@@ -288,7 +334,10 @@ export function ChatInterface({
                     {message.generatedContent && (
                       <div className="mt-3 rounded-lg overflow-hidden border">
                         {message.generatedContent.type === 'image' && message.generatedContent.url && (
-                          <img src={message.generatedContent.url} alt="Generated" className="w-full" />
+                          <img src={message.generatedContent.url} alt="Generated" className="w-full rounded-lg" />
+                        )}
+                        {(message.generatedContent.type === 'audio' || message.generatedContent.type === 'video') && message.generatedContent.url && (
+                          <audio controls src={message.generatedContent.url} className="w-full mt-2" />
                         )}
                         {message.generatedContent.type === 'code' && message.generatedContent.code && (
                           <pre className="p-3 bg-secondary text-xs overflow-auto">
@@ -300,9 +349,7 @@ export function ChatInterface({
                   </div>
                   {message.role === 'user' && (
                     <Avatar className="h-8 w-8 shrink-0">
-                      <AvatarFallback>
-                        <User className="h-4 w-4" />
-                      </AvatarFallback>
+                      <AvatarFallback><User className="h-4 w-4" /></AvatarFallback>
                     </Avatar>
                   )}
                 </div>
@@ -329,11 +376,7 @@ export function ChatInterface({
             {pendingAttachments.map((file, i) => (
               <div key={i} className="relative group">
                 {file.type.startsWith('image') ? (
-                  <img
-                    src={URL.createObjectURL(file)}
-                    alt={file.name}
-                    className="h-16 w-16 rounded object-cover border"
-                  />
+                  <img src={URL.createObjectURL(file)} alt={file.name} className="h-16 w-16 rounded object-cover border" />
                 ) : (
                   <div className="h-16 px-3 flex items-center gap-2 bg-muted rounded border text-xs">
                     <Paperclip className="h-4 w-4" />
@@ -384,12 +427,7 @@ export function ChatInterface({
                       return '*/*'
                     }).join(',')}
                   />
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => fileInputRef.current?.click()}
-                  >
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => fileInputRef.current?.click()}>
                     <Paperclip className="h-4 w-4" />
                   </Button>
                 </>
@@ -399,20 +437,14 @@ export function ChatInterface({
               </Button>
             </div>
           </div>
-          <p className="text-xs text-muted-foreground text-center">
-            Press Enter to send, Shift+Enter for new line
-          </p>
+          <p className="text-xs text-muted-foreground text-center">Press Enter to send, Shift+Enter for new line</p>
         </div>
       </div>
 
-      {/* Preview/Output Section */}
       {children && (
-        <div className="flex-1 min-h-[400px] lg:min-h-0">
-          {children}
-        </div>
+        <div className="flex-1 min-h-[400px] lg:min-h-0">{children}</div>
       )}
 
-      {/* API Key Dialog */}
       <Dialog open={showApiKeyDialog} onOpenChange={setShowApiKeyDialog}>
         <DialogContent>
           <DialogHeader>
@@ -422,7 +454,7 @@ export function ChatInterface({
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            {['openai', 'anthropic', 'groq', 'openrouter', 'replicate', 'huggingface', 'elevenlabs', 'stability', 'runway'].map((provider) => (
+            {['openai', 'anthropic', 'groq', 'openrouter', 'replicate', 'huggingface', 'elevenlabs', 'stability'].map((provider) => (
               <div key={provider} className="space-y-2">
                 <Label htmlFor={`key-${provider}`} className="capitalize">{providerLabels[provider] || provider}</Label>
                 <Input
