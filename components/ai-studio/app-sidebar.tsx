@@ -20,7 +20,8 @@ import {
   Palette,
   Layers,
   Film,
-  Radio
+  Radio,
+  Zap
 } from 'lucide-react'
 import {
   Sidebar,
@@ -64,6 +65,7 @@ const agentItems = [
   { id: 'agents', title: 'My Agents', icon: Bot },
   { id: 'workflows', title: 'Workflows', icon: Workflow },
   { id: 'autonomous', title: 'Autonomous Tasks', icon: Sparkles },
+  { id: 'automations', title: 'AI Automations', icon: Zap, badge: 'New' },
 ]
 
 const resourceItems = [
@@ -146,6 +148,11 @@ export function AppSidebar({ activeSection, setActiveSection }: AppSidebarProps)
                   >
                     <item.icon className="h-4 w-4" />
                     <span>{item.title}</span>
+                    {item.badge && (
+                      <span className="ml-auto rounded bg-primary/20 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                        {item.badge}
+                      </span>
+                    )}
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}

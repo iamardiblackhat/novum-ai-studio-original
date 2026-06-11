@@ -16,6 +16,7 @@ import { AutonomousTasks } from '@/components/ai-studio/autonomous-tasks'
 import { TemplatesLibrary } from '@/components/ai-studio/templates-library'
 import { CartoonEpisodeGenerator } from '@/components/ai-studio/cartoon-episode-generator'
 import { PodcastStudio } from '@/components/ai-studio/podcast-studio'
+import { AutomationsBuilder } from '@/components/ai-studio/automations-builder'
 import { Separator } from '@/components/ui/separator'
 import { 
   Breadcrumb, 
@@ -37,6 +38,7 @@ const sectionTitles: Record<string, string> = {
   'agents': 'My Agents',
   'workflows': 'Workflows',
   'autonomous': 'Autonomous Tasks',
+  'automations': 'AI Automations',
   'templates': 'Templates',
   'themes': 'Themes',
   'layouts': 'Layouts',
@@ -54,6 +56,7 @@ const sectionCategories: Record<string, string> = {
   'agents': 'Agents & Automation',
   'workflows': 'Agents & Automation',
   'autonomous': 'Agents & Automation',
+  'automations': 'Agents & Automation',
   'templates': 'Resources',
   'themes': 'Resources',
   'layouts': 'Resources',
@@ -86,6 +89,8 @@ export default function AIStudio() {
         return <WorkflowsManager />
       case 'autonomous':
         return <AutonomousTasks />
+      case 'automations':
+        return <AutomationsBuilder />
       case 'templates':
       case 'themes':
       case 'layouts':
