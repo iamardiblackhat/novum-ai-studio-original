@@ -19,22 +19,13 @@ export async function POST(req: NextRequest) {
       apiKeys = {},
     } = await req.json();
     if (!prompt || prompt.trim().length < 3)
-      return Response.json(
-        { error: "A valid prompt is required" },
-        { status: 400 },
-      );
+      return Response.json({ error: "Valid prompt required" }, { status: 400 });
 
-    // 1. OpenAI (DALL-E 3)
+    // 1. OpenAI (DALL-E)
     const openaiKey = isValidKey(apiKeys.openai || process.env.OPENAI_API_KEY)
       ? apiKeys.openai || process.env.OPENAI_API_KEY
       : undefined;
-    if (openaiKey && (model === "dall-e-3" || model === "dall-e-2")) {
-      const size =
-        width === height
-          ? "1024x1024"
-          : width > height
-            ? "1792x1024"
-            : "1024x1792";
+    if (openaiKey && (model.includes("dall-e") || model.includes("openai"))) {
       const res = await fetch("https://api.openai.com/v1/images/generations", {
         method: "POST",
         headers: {
@@ -42,11 +33,10 @@ export async function POST(req: NextRequest) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model,
+          model: "dall-e-3",
           prompt: prompt.trim(),
           n: 1,
-          size,
-          response_format: "url",
+          size: "1024x1024",
         }),
       });
       if (res.ok) {
@@ -63,16 +53,11 @@ export async function POST(req: NextRequest) {
       : undefined;
     if (
       stabilityKey &&
-      (model.startsWith("stable-") || model.startsWith("sd"))
+      (model.includes("stable-diffusion") || model.includes("stability"))
     ) {
       const formData = new FormData();
       formData.append("prompt", prompt.trim());
       formData.append("output_format", "webp");
-      formData.append(
-        "aspect_ratio",
-        width === height ? "1:1" : width > height ? "16:9" : "9:16",
-      );
-
       const res = await fetch(
         "https://api.stability.ai/v2beta/stable-image/generate/ultra",
         {
@@ -93,37 +78,19 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 3. Fallback (Pollinations - Hardened)
+    // 3. Fallback
     const safeModel = [
       "flux",
       "flux-realism",
       "flux-anime",
-      "flux-3d",
-      "any-dark",
       "turbo",
       "kontext",
     ].includes(model)
       ? model
       : "flux";
-    const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt.trim())}?model=${safeModel}&width=${width}&height=${height}&seed=${Math.floor(Math.random() * 1000000)}&nologo=true&enhance=true&cache=false`;
-
-    // Verify fallback is alive
-    const check = await fetch(url, {
-      method: "HEAD",
-      signal: AbortSignal.timeout(5000),
-    }).catch(() => null);
-    if (check && check.ok) {
-      return Response.json({ url, prompt: prompt.trim() });
-    }
-
-    throw new Error("Image engines are currently offline.");
+    const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt.trim())}?model=${safeModel}&width=${width}&height=${height}&seed=${Math.floor(Math.random() * 1000000)}&nologo=true`;
+    return Response.json({ url, prompt: prompt.trim() });
   } catch (error: unknown) {
-    return Response.json(
-      {
-        error:
-          error instanceof Error ? error.message : "Image generation failed",
-      },
-      { status: 500 },
-    );
+    return Response.json({ error: "Image synthesis failure" }, { status: 500 });
   }
 }

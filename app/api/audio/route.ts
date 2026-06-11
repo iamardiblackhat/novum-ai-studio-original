@@ -16,34 +16,15 @@ export async function POST(req: NextRequest) {
       apiKeys = {},
     } = await req.json();
     if (!text || text.trim().length === 0)
-      return Response.json({ error: "Text is required" }, { status: 400 });
+      return Response.json({ error: "Text required" }, { status: 400 });
 
-    // 1. OpenAI TTS
-    const openaiKey = isValidKey(apiKeys.openai || process.env.OPENAI_API_KEY)
-      ? apiKeys.openai || process.env.OPENAI_API_KEY
-      : undefined;
-    if (openaiKey && (model.includes("tts") || model.includes("openai"))) {
-      const res = await fetch("https://api.openai.com/v1/audio/speech", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${openaiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ model: "tts-1-hd", input: text.trim(), voice }),
-      });
-      if (res.ok)
-        return new Response(await res.arrayBuffer(), {
-          headers: { "Content-Type": "audio/mpeg" },
-        });
-    }
-
-    // 2. ElevenLabs
+    // 1. ElevenLabs
     const elevenKey = isValidKey(
       apiKeys.elevenlabs || process.env.ELEVENLABS_API_KEY,
     )
       ? apiKeys.elevenlabs || process.env.ELEVENLABS_API_KEY
       : undefined;
-    if (elevenKey && model.includes("eleven")) {
+    if (elevenKey && (model.includes("eleven") || model.includes("v3"))) {
       const res = await fetch(
         `https://api.elevenlabs.io/v1/text-to-speech/${voice}`,
         {
@@ -64,7 +45,26 @@ export async function POST(req: NextRequest) {
         });
     }
 
-    // 3. Fallback (Pollinations TTS - Proper implementation)
+    // 2. OpenAI
+    const openaiKey = isValidKey(apiKeys.openai || process.env.OPENAI_API_KEY)
+      ? apiKeys.openai || process.env.OPENAI_API_KEY
+      : undefined;
+    if (openaiKey && (model.includes("tts") || model.includes("openai"))) {
+      const res = await fetch("https://api.openai.com/v1/audio/speech", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${openaiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ model: "tts-1-hd", input: text.trim(), voice }),
+      });
+      if (res.ok)
+        return new Response(await res.arrayBuffer(), {
+          headers: { "Content-Type": "audio/mpeg" },
+        });
+    }
+
+    // 3. Fallback
     const safeVoice = [
       "alloy",
       "echo",
@@ -83,14 +83,8 @@ export async function POST(req: NextRequest) {
         headers: { "Content-Type": "audio/mpeg" },
       });
 
-    throw new Error("Neural voice engines are currently congested.");
+    throw new Error("Synthesis engines busy");
   } catch (error: unknown) {
-    return Response.json(
-      {
-        error:
-          error instanceof Error ? error.message : "Audio synthesis failed",
-      },
-      { status: 500 },
-    );
+    return Response.json({ error: "Audio failure" }, { status: 500 });
   }
 }

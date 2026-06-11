@@ -19,13 +19,19 @@ export async function POST(req: NextRequest) {
       return Response.json({ error: "Messages are required" }, { status: 400 });
     }
 
-    // 1. OpenRouter (Primary for 2026)
+    // 1. OpenRouter (Primary)
     const openrouterKey = isValidKey(
       apiKeys.openrouter || process.env.OPENROUTER_API_KEY,
     )
       ? apiKeys.openrouter || process.env.OPENROUTER_API_KEY
       : undefined;
-    if (openrouterKey) {
+    if (
+      openrouterKey &&
+      (model.includes("/") ||
+        model.startsWith("gpt") ||
+        model.startsWith("claude") ||
+        model.startsWith("gemini"))
+    ) {
       const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
         headers: {
@@ -47,9 +53,9 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 2. Direct Providers if OpenRouter fails or is skipped
+    // 2. Direct Providers (Secondary)
 
-    // OpenAI Router (GPT-5 Series)
+    // OpenAI direct
     const openaiKey = isValidKey(apiKeys.openai || process.env.OPENAI_API_KEY)
       ? apiKeys.openai || process.env.OPENAI_API_KEY
       : undefined;
@@ -70,7 +76,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Anthropic Router (Claude 4 Series)
+    // Anthropic direct
     const anthropicKey = isValidKey(
       apiKeys.anthropic || process.env.ANTHROPIC_API_KEY,
     )
@@ -100,7 +106,58 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 3. Fallback Logic (June 2026 Public API)
+    // Google direct
+    const googleKey = isValidKey(apiKeys.google || process.env.GEMINI_API_KEY)
+      ? apiKeys.google || process.env.GEMINI_API_KEY
+      : undefined;
+    if (googleKey && model.startsWith("gemini")) {
+      const contents = messages
+        .filter((m: any) => m.role !== "system")
+        .map((m: any) => ({
+          role: m.role === "assistant" ? "model" : "user",
+          parts: [{ text: m.content }],
+        }));
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${googleKey}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ contents }),
+        },
+      );
+      if (res.ok) {
+        const data = await res.json();
+        return Response.json({
+          content: data.candidates[0]?.content?.parts[0]?.text || "",
+        });
+      }
+    }
+
+    // Groq direct
+    const groqKey = isValidKey(apiKeys.groq || process.env.GROQ_API_KEY)
+      ? apiKeys.groq || process.env.GROQ_API_KEY
+      : undefined;
+    if (groqKey && (model.includes("llama") || model.includes("mixtral"))) {
+      const res = await fetch(
+        "https://api.groq.com/openai/v1/chat/completions",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${groqKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ model, messages }),
+        },
+      );
+      if (res.ok) {
+        const data = await res.json();
+        return Response.json({
+          content: data.choices[0]?.message?.content || "",
+        });
+      }
+    }
+
+    // 3. Public Fallback
     const safeModel = [
       "openai-large",
       "claude",
@@ -112,44 +169,28 @@ export async function POST(req: NextRequest) {
     ].includes(model)
       ? model
       : "openai-large";
-
-    for (let i = 0; i < 3; i++) {
-      try {
-        const res = await fetch("https://text.pollinations.ai/openai", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            model: safeModel,
-            messages,
-            seed: Math.floor(Math.random() * 1000000),
-            cache: false,
-          }),
-          signal: AbortSignal.timeout(15000),
-        });
-
-        if (res.status === 429) {
-          await new Promise((r) => setTimeout(r, 1000 * (i + 1)));
-          continue;
-        }
-
-        if (!res.ok) throw new Error(`Engine error (${res.status})`);
-        const data = await res.json();
-        const content = data.choices?.[0]?.message?.content || "";
-        if (content) return Response.json({ content });
-      } catch (e) {
-        if (i === 2) throw e;
-      }
+    const res = await fetch("https://text.pollinations.ai/openai", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: safeModel,
+        messages,
+        seed: Math.floor(Math.random() * 1000000),
+      }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      return Response.json({
+        content: data.choices?.[0]?.message?.content || "",
+      });
     }
 
     throw new Error(
-      "All neural links failed. Check OpenRouter key or provider status.",
+      "All engines failed. Please provide a direct API key in settings.",
     );
   } catch (error: unknown) {
-    console.error("Chat API Error:", error);
     return Response.json(
-      {
-        error: error instanceof Error ? error.message : "Processing failure",
-      },
+      { error: error instanceof Error ? error.message : "Failure" },
       { status: 500 },
     );
   }

@@ -73,7 +73,6 @@ interface ChatInterfaceProps {
   placeholder?: string;
   systemPrompt?: string;
   showAttachments?: boolean;
-  attachmentTypes?: string[];
   apiEndpoint?: "chat" | "image" | "audio" | "music" | "video";
   welcomeTitle?: string;
   welcomeDescription?: string;
@@ -105,6 +104,23 @@ export function ChatInterface({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
+
+  // Load keys from local storage on mount
+  useEffect(() => {
+    const stored = localStorage.getItem("novum-api-keys");
+    if (stored) {
+      try {
+        setApiKeys(JSON.parse(stored));
+      } catch (e) {
+        console.error("Failed to parse stored keys");
+      }
+    }
+  }, []);
+
+  // Save keys to local storage when they change
+  useEffect(() => {
+    localStorage.setItem("novum-api-keys", JSON.stringify(apiKeys));
+  }, [apiKeys]);
 
   const currentModel = models.find((m) => m.id === selectedModel);
 
@@ -488,23 +504,31 @@ export function ChatInterface({
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 mt-4">
-            {["openrouter", "openai", "anthropic", "groq", "replicate"].map(
-              (p) => (
-                <div key={p} className="space-y-1">
-                  <Label className="text-[10px] font-bold uppercase">
-                    {p} Key
-                  </Label>
-                  <Input
-                    type="password"
-                    value={apiKeys[p] || ""}
-                    onChange={(e) =>
-                      setApiKeys((prev) => ({ ...prev, [p]: e.target.value }))
-                    }
-                    className="h-9 text-xs"
-                  />
-                </div>
-              ),
-            )}
+            {[
+              "openrouter",
+              "openai",
+              "anthropic",
+              "google",
+              "groq",
+              "replicate",
+              "elevenlabs",
+              "stability",
+              "runway",
+            ].map((p) => (
+              <div key={p} className="space-y-1">
+                <Label className="text-[10px] font-bold uppercase">
+                  {p} Key
+                </Label>
+                <Input
+                  type="password"
+                  value={apiKeys[p] || ""}
+                  onChange={(e) =>
+                    setApiKeys((prev) => ({ ...prev, [p]: e.target.value }))
+                  }
+                  className="h-9 text-xs"
+                />
+              </div>
+            ))}
           </div>
           <Button
             className="w-full mt-6 uppercase font-bold"
