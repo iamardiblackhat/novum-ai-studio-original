@@ -1,57 +1,42 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState } from "react";
 import {
-  Code2,
   Monitor,
   Smartphone,
   Tablet,
   Download,
-  ExternalLink,
   Globe,
-  Zap,
-  Sparkles,
-  Layout,
   Eye,
   Braces,
-  Layers,
+  Layout,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { ChatInterface, Model } from "./chat-interface";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 
 const webModels: Model[] = [
   {
-    id: "qwen-coder",
-    name: "Qwen 2.5 Coder",
-    provider: "pollinations",
-    badge: "Free",
+    id: "qwen/qwen-3.5-72b-chat",
+    name: "Qwen 3.5 72B",
+    provider: "openrouter",
+    badge: "Elite",
   },
   {
-    id: "gpt-4o",
-    name: "GPT-4o",
-    provider: "openai",
-    badge: "PRO",
-    requiresKey: true,
+    id: "openai/gpt-5-turbo",
+    name: "GPT-5 Turbo",
+    provider: "openrouter",
+    badge: "Fast",
   },
   {
-    id: "claude-3-5-sonnet",
-    name: "Claude 3.5 Sonnet",
-    provider: "anthropic",
-    badge: "PRO",
-    requiresKey: true,
+    id: "anthropic/claude-4-sonnet",
+    name: "Claude 4 Sonnet",
+    provider: "openrouter",
+    badge: "Pro",
   },
-];
-
-const suggestedPrompts = [
-  "Build a neo-brutalist SaaS landing page with bold borders",
-  "Create a minimal glassmorphic dark-mode portfolio",
-  "Build a responsive bento-grid dashboard for an AI startup",
-  "Generate a modern product detail page with an image gallery",
 ];
 
 type Viewport = "desktop" | "tablet" | "mobile";
@@ -70,34 +55,34 @@ export function WebBuilder() {
   return (
     <ChatInterface
       models={webModels}
-      defaultModel="qwen-coder"
-      placeholder="Describe the interface architecture you wish to forge..."
-      welcomeTitle="Architectural Forge"
-      welcomeDescription="Translate abstract conceptual designs into production-grade semantic codebases."
-      suggestedPrompts={suggestedPrompts}
+      defaultModel="qwen/qwen-3.5-72b-chat"
+      placeholder="Describe the web architecture to forge..."
+      welcomeTitle="Web Engineering Forge"
+      welcomeDescription="Production-grade semantic codebase generation for modern web architectures."
       showAttachments={false}
       apiEndpoint="chat"
     >
-      <Card className="flex flex-col h-full bg-card/50 backdrop-blur-xl border-2 border-primary/5 rounded-[2rem] shadow-2xl overflow-hidden">
-        <div className="flex items-center justify-between p-4 border-b bg-background/40 backdrop-blur-md">
-          <div className="flex items-center gap-4">
-            <div className="h-8 w-8 rounded-xl bg-primary/10 flex items-center justify-center text-primary shadow-inner">
-              <Globe size={18} />
+      <Card className="flex flex-col h-full bg-background border rounded-lg overflow-hidden shadow-sm">
+        <div className="flex items-center justify-between p-3 border-b bg-muted/30">
+          <div className="flex items-center gap-3">
+            <div className="h-7 w-7 rounded bg-primary/10 flex items-center justify-center text-primary border">
+              <Globe size={14} />
             </div>
             <Tabs
               value={activeTab}
               onValueChange={(v) => setActiveTab(v as "preview" | "code")}
+              className="h-8"
             >
-              <TabsList className="bg-muted/50 border h-9 p-1 rounded-lg">
+              <TabsList className="h-8 p-1">
                 <TabsTrigger
                   value="preview"
-                  className="text-[10px] font-black uppercase px-3 rounded-md"
+                  className="text-[10px] font-bold uppercase px-3"
                 >
                   <Eye size={12} className="mr-1.5" /> Preview
                 </TabsTrigger>
                 <TabsTrigger
                   value="code"
-                  className="text-[10px] font-black uppercase px-3 rounded-md"
+                  className="text-[10px] font-bold uppercase px-3"
                 >
                   <Braces size={12} className="mr-1.5" /> Source
                 </TabsTrigger>
@@ -106,19 +91,15 @@ export function WebBuilder() {
           </div>
 
           <div className="flex items-center gap-2">
-            <div className="hidden sm:flex items-center gap-1 bg-muted/30 p-1 rounded-xl border">
+            <div className="flex items-center gap-1 bg-background border rounded p-0.5">
               {(["desktop", "tablet", "mobile"] as Viewport[]).map((v) => (
                 <Button
                   key={v}
-                  variant="ghost"
+                  variant={viewport === v ? "secondary" : "ghost"}
                   size="icon"
-                  className={cn(
-                    "h-7 w-7 rounded-lg transition-all",
-                    viewport === v
-                      ? "bg-background text-primary shadow-sm"
-                      : "text-muted-foreground opacity-50 hover:opacity-100",
-                  )}
+                  className="h-7 w-7"
                   onClick={() => setViewport(v)}
+                  title={`${v} view`}
                 >
                   {v === "desktop" ? (
                     <Monitor size={14} />
@@ -130,103 +111,61 @@ export function WebBuilder() {
                 </Button>
               ))}
             </div>
-            <div className="w-px h-4 bg-border mx-1" />
             <Button
               variant="outline"
               size="icon"
-              className="h-9 w-9 rounded-xl border-2 hover:bg-primary/5 hover:text-primary transition-colors disabled:opacity-30"
+              className="h-8 w-8 disabled:opacity-30"
               disabled={!generatedCode}
               onClick={() => {
                 const blob = new Blob([generatedCode], { type: "text/html" });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement("a");
                 a.href = url;
-                a.download = "novum-forge-export.html";
+                a.download = "forge-export.html";
                 a.click();
               }}
+              title="Download Source"
             >
-              <Download size={16} />
+              <Download size={14} />
             </Button>
           </div>
         </div>
 
-        <div className="flex-1 overflow-hidden relative">
-          <AnimatePresence mode="wait">
-            {activeTab === "preview" ? (
-              <motion.div
-                key="preview"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="h-full bg-muted/10 p-6 flex justify-center overflow-auto"
-              >
-                {generatedCode ? (
-                  <div
-                    className="h-full bg-background rounded-2xl shadow-2xl border-2 border-primary/5 transition-all duration-500 overflow-hidden"
-                    style={{ width: viewportWidths[viewport] }}
-                  >
-                    <iframe
-                      srcDoc={generatedCode}
-                      className="h-full w-full border-0"
-                      sandbox="allow-scripts"
-                      title="Architectural Preview"
-                    />
-                  </div>
-                ) : (
-                  <div className="h-full w-full flex flex-col items-center justify-center space-y-4">
-                    <div className="h-20 w-20 rounded-[2.5rem] bg-primary/5 border-2 border-dashed border-primary/20 flex items-center justify-center text-primary/20">
-                      <Layout size={32} />
-                    </div>
-                    <div className="text-center space-y-1">
-                      <p className="font-black uppercase tracking-widest text-[10px] text-muted-foreground">
-                        Neural Visualisation Engine
-                      </p>
-                      <p className="text-xs font-medium text-muted-foreground/60 max-w-[180px]">
-                        Synthesise designs in the chat to render visual
-                        architecture.
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </motion.div>
-            ) : (
-              <motion.div
-                key="code"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="h-full bg-zinc-950 p-6 font-mono text-[11px] overflow-auto"
-              >
-                {generatedCode ? (
-                  <pre className="text-emerald-400 leading-relaxed">
-                    <code>{generatedCode}</code>
-                  </pre>
-                ) : (
-                  <div className="h-full flex items-center justify-center">
-                    <span className="font-black uppercase tracking-[0.3em] text-zinc-800 text-[10px]">
-                      Awaiting Core Output
-                    </span>
-                  </div>
-                )}
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Status Overlay */}
-          <div className="absolute bottom-4 left-6 right-6 flex items-center justify-between pointer-events-none">
-            <div className="bg-background/80 backdrop-blur-md px-3 py-1.5 rounded-full border-2 border-primary/5 flex items-center gap-2 shadow-lg">
-              <Zap size={10} className="text-primary animate-pulse" />
-              <span className="text-[9px] font-black uppercase tracking-widest leading-none">
-                Forge Online
-              </span>
+        <div className="flex-1 overflow-hidden relative bg-muted/5">
+          {activeTab === "preview" ? (
+            <div className="h-full p-4 flex justify-center overflow-auto">
+              {generatedCode ? (
+                <div
+                  className="h-full bg-white rounded border shadow-sm transition-all"
+                  style={{ width: viewportWidths[viewport] }}
+                >
+                  <iframe
+                    srcDoc={generatedCode}
+                    className="h-full w-full border-0"
+                    sandbox="allow-scripts"
+                    title="Output preview"
+                  />
+                </div>
+              ) : (
+                <div className="h-full w-full flex flex-col items-center justify-center text-muted-foreground/40">
+                  <Layout size={40} strokeWidth={1} />
+                  <p className="text-[10px] font-bold uppercase mt-4">
+                    Awaiting Signal
+                  </p>
+                </div>
+              )}
             </div>
-            <Badge
-              variant="secondary"
-              className="bg-primary/5 text-primary border-primary/10 font-black text-[9px] uppercase"
-            >
-              {viewport.toUpperCase()} MODE
-            </Badge>
-          </div>
+          ) : (
+            <div className="h-full bg-zinc-950 p-4 font-mono text-[11px] overflow-auto text-emerald-400">
+              {generatedCode ? (
+                <code>{generatedCode}</code>
+              ) : (
+                <span className="opacity-20 uppercase font-bold text-[10px]">
+                  No source generated
+                </span>
+              )}
+            </div>
+          )}
         </div>
       </Card>
     </ChatInterface>

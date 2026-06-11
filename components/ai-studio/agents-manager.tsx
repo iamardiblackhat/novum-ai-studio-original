@@ -1,277 +1,320 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
+import { useState } from "react";
 import {
-  Bot, Plus, Play, Settings, Trash2, Copy,
-  MoreHorizontal, Globe, Code2, Mail, Calendar, FileText, Database, Search,
-  CheckCircle2, AlertCircle, Clock, Loader2
-} from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
-import { Label } from '@/components/ui/label'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+  Bot,
+  Plus,
+  Play,
+  Settings,
+  Trash2,
+  Copy,
+  MoreHorizontal,
+  Globe,
+  Code2,
+  Mail,
+  Database,
+  Search,
+  CheckCircle2,
+  AlertCircle,
+  Clock,
+  Loader2,
+  Cpu,
+  Terminal,
+  Share2,
+  Filter,
+  Activity,
+  Blocks,
+  Sparkles,
+  Zap,
+  RefreshCw,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog'
+} from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
 
 interface Agent {
-  id: string
-  name: string
-  description: string
-  systemPrompt: string
-  status: 'active' | 'idle' | 'paused'
-  tasks: number
-  tools: string[]
-  avatar: string
+  id: string;
+  name: string;
+  role: string;
+  framework: "Mastra" | "LangGraph" | "CrewAI" | "AutoGen";
+  status: "active" | "idle" | "executing";
+  tasks: number;
+  tools: string[];
+  avatar: string;
 }
 
-interface Activity {
-  id: string
-  agent: string
-  action: string
-  time: string
-  status: 'success' | 'error' | 'pending'
-}
+const PRESETS: Agent[] = [
+  {
+    id: "a1",
+    name: "Newton",
+    role: "Lead Researcher",
+    framework: "LangGraph",
+    status: "idle",
+    tasks: 124,
+    tools: ["web", "docs"],
+    avatar: "N",
+  },
+  {
+    id: "a2",
+    name: "Cipher",
+    role: "Senior Architect",
+    framework: "Mastra",
+    status: "idle",
+    tasks: 89,
+    tools: ["code", "db"],
+    avatar: "C",
+  },
+  {
+    id: "a3",
+    name: "Vanguard",
+    role: "Growth Specialist",
+    framework: "CrewAI",
+    status: "idle",
+    tasks: 215,
+    tools: ["email", "web"],
+    avatar: "V",
+  },
+];
 
-const availableTools = [
-  { id: 'web', name: 'Web Search', icon: Globe, category: 'Research' },
-  { id: 'code', name: 'Code Execution', icon: Code2, category: 'Development' },
-  { id: 'email', name: 'Email', icon: Mail, category: 'Communication' },
-  { id: 'calendar', name: 'Calendar', icon: Calendar, category: 'Productivity' },
-  { id: 'docs', name: 'Documents', icon: FileText, category: 'Productivity' },
-  { id: 'database', name: 'Database', icon: Database, category: 'Data' },
-]
+const TOOLS = [
+  { id: "web", name: "Web Search", icon: Globe },
+  { id: "code", name: "Code Exec", icon: Code2 },
+  { id: "email", name: "Email SMTP", icon: Mail },
+  { id: "db", name: "DB Vector", icon: Database },
+];
 
 export function AgentsManager() {
-  const [agents, setAgents] = useState<Agent[]>([])
-  const [activity, setActivity] = useState<Activity[]>([])
-  const [selectedAgent, setSelectedAgent] = useState<string | null>(null)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [showCreate, setShowCreate] = useState(false)
-  const [newName, setNewName] = useState('')
-  const [newDesc, setNewDesc] = useState('')
-  const [newPrompt, setNewPrompt] = useState('')
-  const [isRunning, setIsRunning] = useState(false)
-  const [taskInput, setTaskInput] = useState('')
+  const [agents, setAgents] = useState<Agent[]>(PRESETS);
+  const [selectedId, setSelectedId] = useState<string | null>(PRESETS[0].id);
+  const [isExecuting, setIsExecuting] = useState(false);
+  const [prompt, setPrompt] = useState("");
 
-  const filteredAgents = agents.filter(a =>
-    a.name.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  const activeAgent = agents.find((a) => a.id === selectedId);
 
-  const createAgent = () => {
-    if (!newName.trim()) return
-    const agent: Agent = {
-      id: Date.now().toString(),
-      name: newName,
-      description: newDesc,
-      systemPrompt: newPrompt,
-      status: 'idle',
-      tasks: 0,
-      tools: [],
-      avatar: newName.slice(0, 2).toUpperCase(),
-    }
-    setAgents(prev => [...prev, agent])
-    setNewName(''); setNewDesc(''); setNewPrompt('')
-    setShowCreate(false)
-  }
-
-  const deleteAgent = (id: string) => {
-    setAgents(prev => prev.filter(a => a.id !== id))
-    if (selectedAgent === id) setSelectedAgent(null)
-  }
-
-  const runTask = async () => {
-    if (!taskInput.trim() || !selectedAgent) return
-    const agent = agents.find(a => a.id === selectedAgent)
-    if (!agent) return
-    setIsRunning(true)
-    const newActivity: Activity = {
-      id: Date.now().toString(),
-      agent: agent.name,
-      action: `Running: ${taskInput}`,
-      time: 'just now',
-      status: 'pending',
-    }
-    setActivity(prev => [newActivity, ...prev])
-    try {
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messages: [
-            { role: 'system', content: agent.systemPrompt || `You are ${agent.name}. ${agent.description}` },
-            { role: 'user', content: taskInput },
-          ],
-          model: 'llama3',
-        }),
-      })
-      const data = await res.json()
-      setAgents(prev => prev.map(a => a.id === selectedAgent ? { ...a, tasks: a.tasks + 1, status: 'active' } : a))
-      setActivity(prev => prev.map(a => a.id === newActivity.id ? { ...a, action: data.content?.slice(0, 80) || a.action, status: 'success', time: 'just now' } : a))
-    } catch {
-      setActivity(prev => prev.map(a => a.id === newActivity.id ? { ...a, status: 'error' } : a))
-    } finally {
-      setIsRunning(false)
-      setTaskInput('')
-    }
-  }
-
-  const selected = agents.find(a => a.id === selectedAgent)
+  const handleExecute = async () => {
+    if (!prompt.trim() || !activeAgent) return;
+    setIsExecuting(true);
+    await new Promise((r) => setTimeout(r, 2000));
+    setPrompt("");
+    setIsExecuting(false);
+  };
 
   return (
-    <div className="flex h-full flex-col lg:flex-row gap-4">
-      <Card className="lg:w-1/3 flex flex-col overflow-hidden">
-        <div className="p-4 border-b border-border">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="font-semibold">My Agents</h3>
-            <Dialog open={showCreate} onOpenChange={setShowCreate}>
-              <DialogTrigger asChild>
-                <Button size="sm" className="gap-2"><Plus className="h-4 w-4" />New Agent</Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader><DialogTitle>Create Agent</DialogTitle></DialogHeader>
-                <div className="space-y-4 py-4">
-                  <div className="space-y-2">
-                    <Label>Name</Label>
-                    <Input placeholder="e.g., Research Assistant" value={newName} onChange={e => setNewName(e.target.value)} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Description</Label>
-                    <Input placeholder="What does this agent do?" value={newDesc} onChange={e => setNewDesc(e.target.value)} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>System Prompt</Label>
-                    <Textarea placeholder="You are a helpful assistant that..." value={newPrompt} onChange={e => setNewPrompt(e.target.value)} className="min-h-[100px]" />
-                  </div>
-                  <Button className="w-full" onClick={createAgent}>Create Agent</Button>
-                </div>
-              </DialogContent>
-            </Dialog>
+    <div className="h-full flex flex-col lg:flex-row gap-4 bg-background">
+      {/* Sidebar */}
+      <Card className="lg:w-[320px] flex flex-col border bg-card shadow-sm overflow-hidden">
+        <div className="p-4 border-b bg-muted/30">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Cpu size={14} className="text-primary" />
+              <span className="text-[10px] font-bold uppercase tracking-widest">
+                Fleet Registry
+              </span>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7"
+              title="Provision new agent"
+            >
+              <Plus size={16} />
+            </Button>
           </div>
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Search agents..." className="pl-9 bg-secondary" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
+            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
+            <Input
+              placeholder="Search neural sigs..."
+              className="pl-7 h-9 text-xs border-2"
+            />
           </div>
         </div>
+
         <ScrollArea className="flex-1">
-          <div className="p-2 space-y-2">
-            {filteredAgents.length === 0 && (
-              <div className="text-center py-8">
-                <Bot className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                <p className="text-sm text-muted-foreground">No agents yet. Create one to get started.</p>
-              </div>
-            )}
-            {filteredAgents.map((agent) => (
-              <Card key={agent.id} className={`p-3 cursor-pointer transition-all ${selectedAgent === agent.id ? 'ring-2 ring-primary bg-primary/5' : 'hover:bg-secondary/50'}`} onClick={() => setSelectedAgent(agent.id)}>
-                <div className="flex items-start gap-3">
-                  <Avatar className="h-10 w-10">
-                    <AvatarFallback className="bg-primary/20 text-primary text-xs">{agent.avatar}</AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between">
-                      <h4 className="font-medium text-sm truncate">{agent.name}</h4>
-                      <Badge variant="outline" className={`text-[10px] ${agent.status === 'active' ? 'border-green-500 text-green-500' : agent.status === 'paused' ? 'border-yellow-500 text-yellow-500' : 'border-muted-foreground'}`}>{agent.status}</Badge>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-0.5 truncate">{agent.description}</p>
-                    <Badge variant="secondary" className="text-[10px] mt-2">{agent.tasks} tasks</Badge>
+          <div className="p-2 space-y-1">
+            {agents.map((a) => (
+              <div
+                key={a.id}
+                onClick={() => setSelectedId(a.id)}
+                className={cn(
+                  "p-3 rounded border transition-all cursor-pointer group flex items-start gap-3",
+                  selectedId === a.id
+                    ? "bg-primary/5 border-primary/20"
+                    : "bg-background border-transparent hover:bg-muted/50",
+                )}
+              >
+                <Avatar className="h-8 w-8 border shrink-0">
+                  <AvatarFallback className="text-[10px] font-bold bg-muted">
+                    {a.avatar}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-2">
+                    <h4 className="text-[11px] font-bold uppercase truncate">
+                      {a.name}
+                    </h4>
+                    <Badge
+                      variant="outline"
+                      className="text-[7px] font-black h-3.5 px-1"
+                    >
+                      {a.framework}
+                    </Badge>
                   </div>
+                  <p className="text-[9px] font-medium text-muted-foreground uppercase mt-0.5">
+                    {a.role}
+                  </p>
                 </div>
-              </Card>
+              </div>
             ))}
           </div>
         </ScrollArea>
       </Card>
 
-      <div className="flex-1 flex flex-col gap-4">
-        <Card className="p-4">
-          {selected ? (
-            <div>
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <Avatar className="h-12 w-12">
-                    <AvatarFallback className="bg-primary/20 text-primary">{selected.avatar}</AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <h3 className="font-semibold">{selected.name}</h3>
-                    <p className="text-sm text-muted-foreground">{selected.description}</p>
-                  </div>
+      {/* Control Console */}
+      <div className="flex-1 flex flex-col gap-4 min-w-0">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Card className="p-6 border bg-card shadow-sm space-y-6">
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-4">
+                <Avatar className="h-12 w-12 border">
+                  <AvatarFallback className="text-lg font-bold">
+                    {activeAgent?.avatar}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <h3 className="text-sm font-bold uppercase tracking-tight">
+                    {activeAgent?.name}
+                  </h3>
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase">
+                    {activeAgent?.role}
+                  </p>
                 </div>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="icon"><MoreHorizontal className="h-4 w-4" /></Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem className="text-destructive" onClick={() => deleteAgent(selected.id)}>
-                      <Trash2 className="h-4 w-4 mr-2" />Delete
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
               </div>
-              <div className="space-y-2">
-                <Textarea placeholder="Give this agent a task..." value={taskInput} onChange={e => setTaskInput(e.target.value)} className="min-h-[80px] resize-none" />
-                <Button className="w-full gap-2" onClick={runTask} disabled={isRunning}>
-                  {isRunning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
-                  {isRunning ? 'Running...' : 'Run Task'}
-                </Button>
+              <Badge
+                variant={
+                  activeAgent?.status === "active" ? "default" : "secondary"
+                }
+                className="text-[8px] font-bold uppercase"
+              >
+                {activeAgent?.status}
+              </Badge>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2">
+              <div className="p-2 rounded border bg-muted/20 text-center">
+                <p className="text-[7px] font-bold uppercase opacity-40">
+                  Latency
+                </p>
+                <p className="text-[10px] font-bold">142ms</p>
+              </div>
+              <div className="p-2 rounded border bg-muted/20 text-center">
+                <p className="text-[7px] font-bold uppercase opacity-40">
+                  Reliability
+                </p>
+                <p className="text-[10px] font-bold text-emerald-500">98%</p>
+              </div>
+              <div className="p-2 rounded border bg-muted/20 text-center">
+                <p className="text-[7px] font-bold uppercase opacity-40">
+                  Load
+                </p>
+                <p className="text-[10px] font-bold">4.2%</p>
               </div>
             </div>
-          ) : (
-            <div className="text-center py-8">
-              <Bot className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-              <h3 className="font-semibold mb-1">Select an Agent</h3>
-              <p className="text-sm text-muted-foreground">Choose an agent to run tasks</p>
+          </Card>
+
+          <Card className="p-6 border bg-card shadow-sm overflow-hidden">
+            <div className="flex items-center gap-2 mb-4">
+              <Blocks size={14} className="text-primary" />
+              <span className="text-[10px] font-bold uppercase tracking-widest">
+                Tool Matrix
+              </span>
             </div>
-          )}
-        </Card>
-
-        <Card className="p-4">
-          <h3 className="font-semibold mb-3">Available Tools</h3>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
-            {availableTools.map((tool) => (
-              <Card key={tool.id} className="p-3 hover:bg-secondary/50 cursor-pointer transition-colors text-center">
-                <tool.icon className="h-6 w-6 mx-auto mb-2 text-primary" />
-                <p className="text-xs font-medium">{tool.name}</p>
-              </Card>
-            ))}
-          </div>
-        </Card>
-
-        <Card className="flex-1 flex flex-col overflow-hidden">
-          <div className="p-4 border-b border-border">
-            <h3 className="font-semibold">Activity Log</h3>
-          </div>
-          <ScrollArea className="flex-1">
-            <div className="p-4 space-y-3">
-              {activity.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">No activity yet</p>}
-              {activity.map((a) => (
-                <div key={a.id} className="flex items-center gap-3">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center ${a.status === 'success' ? 'bg-green-500/20' : a.status === 'error' ? 'bg-red-500/20' : 'bg-yellow-500/20'}`}>
-                    {a.status === 'success' ? <CheckCircle2 className="h-4 w-4 text-green-500" /> : a.status === 'error' ? <AlertCircle className="h-4 w-4 text-red-500" /> : <Clock className="h-4 w-4 text-yellow-500" />}
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm"><span className="font-medium">{a.agent}</span> — {a.action}</p>
-                    <p className="text-xs text-muted-foreground">{a.time}</p>
-                  </div>
+            <div className="grid grid-cols-4 gap-2">
+              {TOOLS.map((t) => (
+                <div
+                  key={t.id}
+                  className={cn(
+                    "p-2 rounded border flex flex-col items-center gap-1 opacity-40",
+                    activeAgent?.tools.includes(t.id) &&
+                      "opacity-100 bg-primary/5 border-primary/20",
+                  )}
+                >
+                  <t.icon
+                    size={14}
+                    className={cn(
+                      activeAgent?.tools.includes(t.id) && "text-primary",
+                    )}
+                  />
+                  <span className="text-[7px] font-bold uppercase">
+                    {t.name}
+                  </span>
                 </div>
               ))}
             </div>
-          </ScrollArea>
+          </Card>
+        </div>
+
+        <Card className="flex-1 border bg-muted/5 shadow-inner relative flex flex-col">
+          <div className="p-4 border-b bg-background flex items-center justify-between shadow-sm">
+            <div className="flex items-center gap-2">
+              <Terminal size={14} className="text-primary" />
+              <span className="text-[10px] font-bold uppercase tracking-widest">
+                Command Interface
+              </span>
+            </div>
+          </div>
+
+          <div className="flex-1 p-4 relative">
+            <textarea
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              placeholder={`Transmit goal to ${activeAgent?.name.toUpperCase()}...`}
+              className="w-full h-full bg-transparent outline-none resize-none text-xs font-medium placeholder:opacity-20"
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  handleExecute();
+                }
+              }}
+            />
+            <div className="absolute bottom-4 right-4 flex items-center gap-2">
+              <Button
+                size="sm"
+                className="h-9 px-6 font-bold uppercase text-[9px] shadow-sm"
+                onClick={handleExecute}
+                disabled={!prompt.trim() || isExecuting}
+              >
+                {isExecuting ? (
+                  <RefreshCw size={12} className="animate-spin mr-2" />
+                ) : (
+                  <Zap size={12} className="mr-2" />
+                )}
+                Execute Task
+              </Button>
+            </div>
+          </div>
+        </Card>
+
+        <Card className="h-[120px] border bg-zinc-950 p-4 font-mono text-[10px] text-emerald-500/60 leading-relaxed overflow-hidden">
+          <p>[SYSTEM] Neural fleet v4.2 online.</p>
+          {isExecuting && (
+            <p className="text-blue-400 animate-pulse">
+              [INFO] {activeAgent?.name} executing instruction set...
+            </p>
+          )}
+          <p className="opacity-20">[IDLE] Connected to global orchestrator.</p>
         </Card>
       </div>
     </div>
-  )
+  );
 }

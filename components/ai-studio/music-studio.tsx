@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState, useRef } from "react";
 import {
   Play,
   Pause,
@@ -9,23 +8,14 @@ import {
   Music4,
   Volume2,
   Clock,
-  Shuffle,
-  Repeat,
   SkipBack,
   SkipForward,
-  Heart,
-  MoreVertical,
   Trash2,
-  Zap,
-  Sparkles,
-  Waves,
+  History,
   ListMusic,
-  Mic2,
-  Disc,
-  Sliders,
-  Upload,
-  PlusCircle,
   Save,
+  Upload,
+  Sliders,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -33,12 +23,6 @@ import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ChatInterface, Model } from "./chat-interface";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 
 interface GeneratedTrack {
@@ -55,28 +39,29 @@ interface GeneratedTrack {
 const musicModels: Model[] = [
   {
     id: "musicgen",
-    name: "MusicGen Melody",
+    name: "MusicGen Large V2",
     provider: "replicate",
-    badge: "Fast",
-  },
-  {
-    id: "musicgen-large",
-    name: "MusicGen Large",
-    provider: "replicate",
-    badge: "High-Fi",
+    badge: "Elite",
   },
   {
     id: "riffusion",
-    name: "Riffusion V2",
+    name: "Riffusion V3",
     provider: "pollinations",
-    badge: "Free",
+    badge: "Fast",
+  },
+  {
+    id: "suno/v4-pro",
+    name: "Suno V4 Pro",
+    provider: "openrouter",
+    badge: "Pro",
+    requiresKey: true,
   },
 ];
 
 const durationOptions = [
-  { id: 15, label: "15s", desc: "Social Clip" },
-  { id: 30, label: "30s", desc: "Short Intro" },
-  { id: 60, label: "60s", desc: "Standard Track" },
+  { id: 30, label: "30S" },
+  { id: 60, label: "60S" },
+  { id: 120, label: "120S" },
 ];
 
 export function MusicStudio() {
@@ -85,45 +70,24 @@ export function MusicStudio() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState([80]);
   const [duration, setDuration] = useState(30);
-  const [isExporting, setIsExporting] = useState(false);
-  const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const toggleFavorite = (id: string) => {
-    setFavorites((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     files.forEach((file) => {
-      const url = URL.createObjectURL(file);
       const newTrack: GeneratedTrack = {
         id: Math.random().toString(),
         title: file.name,
         prompt: "User Uploaded Reference",
-        url,
+        url: URL.createObjectURL(file),
         model: "Local Sync",
-        duration: 0, // Should be metadata driven
+        duration: 0,
         timestamp: new Date(),
         type: "uploaded",
       };
       setTracks((prev) => [newTrack, ...prev]);
     });
-  };
-
-  const playTrack = (track: GeneratedTrack) => {
-    setCurrentTrack(track);
-    setIsPlaying(true);
-    if (audioRef.current) {
-      audioRef.current.src = track.url;
-      audioRef.current.play();
-    }
   };
 
   const togglePlay = () => {
@@ -141,275 +105,231 @@ export function MusicStudio() {
     <ChatInterface
       models={musicModels}
       defaultModel="musicgen"
-      placeholder="Describe the sonic atmosphere..."
-      welcomeTitle="Sonic Alchemist"
-      welcomeDescription="Translate textual descriptions into high-fidelity spectral compositions."
+      placeholder="Describe the sonic architecture..."
+      welcomeTitle="Sonic Production Suite"
+      welcomeDescription="Advanced audio synthesis and mastering interface for high-fidelity spectral output."
       apiEndpoint="music"
     >
-      <div className="flex flex-col h-full gap-6">
+      <div className="flex flex-col h-full gap-4">
         <audio ref={audioRef} onEnded={() => setIsPlaying(false)} />
 
-        {/* Advanced Player */}
-        <Card className="p-8 border-2 border-primary/5 bg-card/50 backdrop-blur-xl rounded-[2.5rem] shadow-2xl relative overflow-hidden group">
-          <div className="absolute top-0 right-0 -mr-16 -mt-16 w-48 h-48 bg-primary/10 rounded-full blur-3xl group-hover:bg-primary/20 transition-all duration-700" />
-
-          <div className="flex flex-col items-center relative z-10">
-            <div className="relative mb-8">
-              <div
-                className={cn(
-                  "w-48 h-48 rounded-[3rem] bg-primary/10 flex items-center justify-center transition-all duration-700 border-4 border-primary/5 shadow-inner overflow-hidden",
-                  isPlaying ? "scale-105 border-primary/20 shadow-2xl" : "",
-                )}
+        {/* Main Monitor */}
+        <Card className="p-6 border bg-card shadow-sm flex flex-col items-center">
+          <div className="w-full flex items-center justify-between mb-8">
+            <Badge
+              variant="outline"
+              className="font-bold uppercase text-[8px] border-primary/20 text-primary"
+            >
+              Engine Online
+            </Badge>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 text-[9px] font-bold uppercase"
+                onClick={() => fileInputRef.current?.click()}
+                title="Import audio"
               >
-                <AnimatePresence mode="wait">
-                  {isPlaying ? (
-                    <motion.div
-                      key="playing"
-                      initial={{ scale: 0.8, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      className="flex items-center gap-1.5"
-                    >
-                      {[0, 1, 2, 3, 4].map((i) => (
-                        <motion.div
-                          key={i}
-                          animate={{ height: [20, 60, 20] }}
-                          transition={{
-                            repeat: Infinity,
-                            duration: 0.8,
-                            delay: i * 0.1,
-                          }}
-                          className="w-2 rounded-full bg-primary"
-                        />
-                      ))}
-                    </motion.div>
-                  ) : (
-                    <motion.div
-                      key="idle"
-                      initial={{ scale: 0.8, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                    >
-                      <Disc className="h-20 w-20 text-primary opacity-20 animate-spin-slow" />
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-              <div className="absolute -bottom-4 right-4 h-12 w-12 rounded-2xl bg-background border-2 border-primary/20 shadow-xl flex items-center justify-center text-primary">
-                <Music4 size={24} />
-              </div>
-            </div>
-
-            <div className="text-center space-y-2 mb-8">
-              <h3 className="text-2xl font-black tracking-tight uppercase truncate max-w-[280px]">
-                {currentTrack?.title || "Sonic Neutral"}
-              </h3>
-              <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest leading-none">
-                {currentTrack
-                  ? `${currentTrack.type === "uploaded" ? "Imported" : currentTrack.duration + "s"} via ${currentTrack.model}`
-                  : "Awaiting Synthesis"}
-              </p>
-            </div>
-
-            <div className="w-full space-y-8">
-              <div className="flex items-center justify-center gap-6">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-12 w-12 rounded-2xl text-muted-foreground hover:text-primary"
-                >
-                  <SkipBack />
-                </Button>
-                <Button
-                  size="icon"
-                  disabled={!currentTrack}
-                  onClick={togglePlay}
-                  className="h-20 w-20 rounded-[2.5rem] shadow-2xl shadow-primary/20 transition-all active:scale-95"
-                >
-                  {isPlaying ? (
-                    <Pause size={32} />
-                  ) : (
-                    <Play size={32} className="ml-1" />
-                  )}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-12 w-12 rounded-2xl text-muted-foreground hover:text-primary"
-                >
-                  <SkipForward />
-                </Button>
-              </div>
-
-              <div className="flex items-center gap-6">
-                <Volume2 size={18} className="text-primary/40" />
-                <Slider
-                  value={volume}
-                  onValueChange={(v) => {
-                    setVolume(v);
-                    if (audioRef.current) audioRef.current.volume = v[0] / 100;
-                  }}
-                  max={100}
-                  className="cursor-pointer"
+                <Upload size={12} className="mr-1" /> Import
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  className="hidden"
+                  accept="audio/*"
+                  onChange={handleFileUpload}
                 />
-                <span className="text-[10px] font-black text-primary w-8">
-                  {volume}%
-                </span>
-              </div>
+              </Button>
+            </div>
+          </div>
+
+          <div className="w-40 h-40 rounded-full border-4 border-muted bg-muted/20 flex items-center justify-center mb-6 relative">
+            <Music4
+              size={48}
+              className={cn(
+                "text-primary transition-all",
+                isPlaying ? "animate-pulse scale-110" : "opacity-20",
+              )}
+            />
+            {isPlaying && (
+              <div className="absolute inset-0 rounded-full border-2 border-primary animate-ping opacity-20" />
+            )}
+          </div>
+
+          <div className="text-center mb-8">
+            <h3 className="text-sm font-bold uppercase truncate max-w-[240px]">
+              {currentTrack?.title || "No Track Loaded"}
+            </h3>
+            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1">
+              {currentTrack
+                ? `${currentTrack.model} • ${currentTrack.type}`
+                : "Awaiting Data"}
+            </p>
+          </div>
+
+          <div className="w-full space-y-6">
+            <div className="flex items-center justify-center gap-4">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-9 w-9"
+                title="Previous"
+              >
+                <SkipBack size={18} />
+              </Button>
+              <Button
+                size="icon"
+                onClick={togglePlay}
+                disabled={!currentTrack}
+                className="h-12 w-12 rounded-full shadow-md"
+                title={isPlaying ? "Pause" : "Play"}
+              >
+                {isPlaying ? (
+                  <Pause size={24} />
+                ) : (
+                  <Play size={24} className="ml-1" />
+                )}
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-9 w-9"
+                title="Next"
+              >
+                <SkipForward size={18} />
+              </Button>
+            </div>
+            <div className="flex items-center gap-4 px-4 py-2 bg-muted/30 rounded border">
+              <Volume2 size={14} className="text-muted-foreground" />
+              <Slider
+                value={volume}
+                onValueChange={(v) => {
+                  setVolume(v);
+                  if (audioRef.current) audioRef.current.volume = v[0] / 100;
+                }}
+                max={100}
+                className="flex-1"
+              />
+              <span className="text-[9px] font-bold w-6">{volume}%</span>
             </div>
           </div>
         </Card>
 
-        {/* Configuration & Import Hub */}
-        <Card className="p-6 border-2 border-primary/5 bg-card/30 rounded-[2rem] space-y-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Sliders size={16} className="text-primary" />
-              <h3 className="font-black text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-                Synthesis Matrix
-              </h3>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              className="rounded-xl h-9 font-bold uppercase text-[9px] border-2 hover:bg-primary/5 hover:text-primary transition-all"
-              onClick={() => fileInputRef.current?.click()}
-            >
-              <Upload size={14} className="mr-1.5" /> Import Reference
-              <input
-                type="file"
-                ref={fileInputRef}
-                className="hidden"
-                accept="audio/*"
-                onChange={handleFileUpload}
-              />
-            </Button>
+        {/* Config */}
+        <Card className="p-4 border bg-card/50 shadow-sm flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Sliders size={14} className="text-primary" />
+            <span className="text-[10px] font-bold uppercase tracking-widest">
+              Synthesis Parameters
+            </span>
           </div>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="flex gap-1">
             {durationOptions.map((opt) => (
-              <button
+              <Button
                 key={opt.id}
+                variant={duration === opt.id ? "secondary" : "ghost"}
+                size="sm"
+                className="h-7 text-[9px] font-bold px-3"
                 onClick={() => setDuration(opt.id)}
-                className={cn(
-                  "p-3 rounded-2xl border-2 transition-all text-left group",
-                  duration === opt.id
-                    ? "bg-primary/5 border-primary shadow-sm"
-                    : "bg-background border-transparent hover:border-primary/20",
-                )}
               >
-                <p
-                  className={cn(
-                    "text-xs font-black uppercase transition-colors",
-                    duration === opt.id
-                      ? "text-primary"
-                      : "text-muted-foreground",
-                  )}
-                >
-                  {opt.label}
-                </p>
-                <p className="text-[9px] font-bold text-muted-foreground/50 uppercase tracking-tighter mt-0.5">
-                  {opt.desc}
-                </p>
-              </button>
+                {opt.label}
+              </Button>
             ))}
           </div>
         </Card>
 
-        {/* Spectral Archive */}
-        <Card className="flex-1 flex flex-col border-2 border-primary/5 rounded-[2rem] shadow-xl overflow-hidden min-h-[300px]">
-          <div className="px-6 py-4 border-b bg-muted/20 flex items-center justify-between">
+        {/* Archive */}
+        <Card className="flex-1 flex flex-col border bg-card shadow-sm overflow-hidden min-h-[250px]">
+          <div className="px-4 py-2 border-b bg-muted/30 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Waves size={16} className="text-primary" />
-              <h3 className="font-black text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-                Spectral Archive
-              </h3>
+              <History size={14} className="text-muted-foreground" />
+              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                Archive ({tracks.length})
+              </span>
             </div>
-            <div className="flex items-center gap-2">
-              <Badge
-                variant="secondary"
-                className="bg-primary/5 text-primary border-primary/10 font-black text-[9px] uppercase tracking-widest"
-              >
-                {tracks.length} STEMS
-              </Badge>
-              <Button
-                size="sm"
-                className="h-8 rounded-lg font-black uppercase text-[9px] px-4 shadow-lg shadow-primary/10"
-                disabled={!currentTrack || isExporting}
-              >
-                <Save size={12} className="mr-1.5" /> Export Master
-              </Button>
-            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 text-[8px] font-bold uppercase"
+              disabled={!currentTrack}
+              title="Export Track"
+            >
+              <Save size={12} className="mr-1" /> Export
+            </Button>
           </div>
           <ScrollArea className="flex-1">
             {tracks.length === 0 ? (
-              <div className="py-20 text-center space-y-3 opacity-20">
+              <div className="py-10 text-center opacity-20">
                 <ListMusic size={32} className="mx-auto" />
-                <p className="text-[10px] font-black uppercase tracking-[0.2em]">
-                  Archive Depleted
+                <p className="text-[10px] font-bold uppercase mt-2">
+                  No signals indexed
                 </p>
               </div>
             ) : (
-              <div className="p-4 space-y-2">
-                {tracks.map((track) => (
-                  <motion.div
-                    key={track.id}
-                    layout
-                    onClick={() => playTrack(track)}
+              <div className="p-2 space-y-1">
+                {tracks.map((t) => (
+                  <div
+                    key={t.id}
+                    onClick={() => {
+                      setCurrentTrack(t);
+                      setIsPlaying(true);
+                      if (audioRef.current) {
+                        audioRef.current.src = t.url;
+                        audioRef.current.play();
+                      }
+                    }}
                     className={cn(
-                      "flex items-center gap-4 p-4 rounded-2xl border-2 transition-all cursor-pointer group",
-                      currentTrack?.id === track.id
-                        ? "bg-primary/5 border-primary shadow-sm"
-                        : "bg-background border-transparent hover:border-primary/20",
+                      "flex items-center gap-3 p-3 rounded border transition-all cursor-pointer group",
+                      currentTrack?.id === t.id
+                        ? "bg-primary/5 border-primary/20"
+                        : "bg-background border-transparent hover:bg-muted/50",
                     )}
                   >
-                    <div className="h-10 w-10 rounded-xl bg-muted flex items-center justify-center shrink-0 group-hover:bg-primary/10 transition-colors">
+                    <div className="h-8 w-8 rounded bg-muted flex items-center justify-center shrink-0">
                       <Music4
-                        size={18}
+                        size={14}
                         className={cn(
-                          currentTrack?.id === track.id
-                            ? "text-primary animate-pulse"
+                          currentTrack?.id === t.id
+                            ? "text-primary"
                             : "text-muted-foreground",
                         )}
                       />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <h4 className="text-sm font-black uppercase tracking-tight truncate">
-                          {track.title}
-                        </h4>
-                        <Badge className="h-4 px-1.5 text-[8px] font-black uppercase bg-primary/10 text-primary border-0">
-                          {track.model}
-                        </Badge>
-                      </div>
-                      <p className="text-[10px] font-bold text-muted-foreground truncate uppercase tracking-widest mt-1 opacity-60">
-                        {track.prompt}
+                      <h4 className="text-[11px] font-bold uppercase truncate">
+                        {t.title}
+                      </h4>
+                      <p className="text-[8px] font-bold text-muted-foreground truncate uppercase tracking-tighter opacity-60">
+                        {t.prompt}
                       </p>
                     </div>
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-9 w-9 rounded-xl hover:bg-primary/5"
+                        className="h-7 w-7"
                         asChild
-                        onClick={(e) => e.stopPropagation()}
+                        title="Download"
                       >
-                        <a href={track.url} download>
-                          <Download size={16} />
+                        <a href={t.url} download>
+                          <Download size={12} />
                         </a>
                       </Button>
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-9 w-9 rounded-xl hover:bg-rose-500/10 hover:text-rose-500"
+                        className="h-7 w-7 text-rose-500"
                         onClick={(e) => {
                           e.stopPropagation();
                           setTracks((prev) =>
-                            prev.filter((t) => t.id !== track.id),
+                            prev.filter((tr) => tr.id !== t.id),
                           );
                         }}
+                        title="Delete"
                       >
-                        <Trash2 size={16} />
+                        <Trash2 size={12} />
                       </Button>
                     </div>
-                  </motion.div>
+                  </div>
                 ))}
               </div>
             )}
