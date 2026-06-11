@@ -1,14 +1,96 @@
-import { NextRequest } from 'next/server'
-export const dynamic = 'force-dynamic'
+import { NextRequest } from "next/server";
+
+export const dynamic = "force-dynamic";
+
+function isValidKey(key: string | undefined): boolean {
+  if (!key) return false;
+  return !key.toLowerCase().includes("your-") && key.trim().length > 15;
+}
+
 export async function POST(req: NextRequest) {
   try {
-    const { text, voice = 'nova' } = await req.json()
-    if (!text || text.trim().length === 0) return Response.json({ error: 'Text is required' }, { status: 400 })
-    const safeVoice = ['alloy','echo','fable','onyx','nova','shimmer'].includes(voice) ? voice : 'nova'
-    const res = await fetch(`https://audio.pollinations.ai/tts?voice=${safeVoice}&text=${encodeURIComponent(text.trim())}`)
-    if (!res.ok) throw new Error(`TTS failed (${res.status})`)
-    return new Response(await res.arrayBuffer(), { headers: { 'Content-Type': 'audio/mpeg' } })
+    const {
+      text,
+      voice = "nova",
+      model = "pollinations-tts",
+      apiKeys = {},
+    } = await req.json();
+    if (!text || text.trim().length === 0)
+      return Response.json({ error: "Text is required" }, { status: 400 });
+
+    // 1. OpenAI TTS
+    const openaiKey = isValidKey(apiKeys.openai || process.env.OPENAI_API_KEY)
+      ? apiKeys.openai || process.env.OPENAI_API_KEY
+      : undefined;
+    if (openaiKey && (model.includes("tts") || model.includes("openai"))) {
+      const res = await fetch("https://api.openai.com/v1/audio/speech", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${openaiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ model: "tts-1-hd", input: text.trim(), voice }),
+      });
+      if (res.ok)
+        return new Response(await res.arrayBuffer(), {
+          headers: { "Content-Type": "audio/mpeg" },
+        });
+    }
+
+    // 2. ElevenLabs
+    const elevenKey = isValidKey(
+      apiKeys.elevenlabs || process.env.ELEVENLABS_API_KEY,
+    )
+      ? apiKeys.elevenlabs || process.env.ELEVENLABS_API_KEY
+      : undefined;
+    if (elevenKey && model.includes("eleven")) {
+      const res = await fetch(
+        `https://api.elevenlabs.io/v1/text-to-speech/${voice}`,
+        {
+          method: "POST",
+          headers: {
+            "xi-api-key": elevenKey,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            text: text.trim(),
+            model_id: "eleven_multilingual_v2",
+          }),
+        },
+      );
+      if (res.ok)
+        return new Response(await res.arrayBuffer(), {
+          headers: { "Content-Type": "audio/mpeg" },
+        });
+    }
+
+    // 3. Fallback (Pollinations TTS - Proper implementation)
+    const safeVoice = [
+      "alloy",
+      "echo",
+      "fable",
+      "onyx",
+      "nova",
+      "shimmer",
+    ].includes(voice)
+      ? voice
+      : "nova";
+    const res = await fetch(
+      `https://audio.pollinations.ai/tts?voice=${safeVoice}&text=${encodeURIComponent(text.trim())}`,
+    );
+    if (res.ok)
+      return new Response(await res.arrayBuffer(), {
+        headers: { "Content-Type": "audio/mpeg" },
+      });
+
+    throw new Error("Neural voice engines are currently congested.");
   } catch (error: unknown) {
-    return Response.json({ error: error instanceof Error ? error.message : 'Audio synthesis failed' }, { status: 500 })
+    return Response.json(
+      {
+        error:
+          error instanceof Error ? error.message : "Audio synthesis failed",
+      },
+      { status: 500 },
+    );
   }
 }

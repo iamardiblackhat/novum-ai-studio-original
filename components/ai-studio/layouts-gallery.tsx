@@ -1,463 +1,336 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { motion } from 'framer-motion'
-import { Layout, Copy, Check, Grid, Columns, Rows, Square, ExternalLink } from 'lucide-react'
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Layout,
+  Grid,
+  Columns,
+  Layers,
+  Maximize2,
+  Sparkles,
+  Star,
+  Smartphone,
+  Laptop,
+  Tablet,
+  Search,
+  Filter,
+  Copy,
+  Check,
+  ExternalLink,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-type LayoutCategory = 'all' | 'marketing' | 'dashboard' | 'ecommerce' | 'blog' | 'app'
+type LayoutCategory = "All" | "Dashboard" | "Landing" | "Content" | "Creative";
 
-type LayoutItem = {
-  id: string
-  name: string
-  description: string
-  category: Exclude<LayoutCategory, 'all'>
-  tags: string[]
-  trending?: boolean
-  code: string
-  preview: {
-    type: 'bento' | 'sidebar' | 'hero' | 'grid' | 'split' | 'magazine' | 'masonry' | 'dashboard' | 'command' | 'timeline'
-    label: string
-  }
-}
+type AppLayout = {
+  id: string;
+  name: string;
+  category: Exclude<LayoutCategory, "All">;
+  description: string;
+  trending?: boolean;
+  preview: React.ReactNode;
+  code: string;
+};
 
-const LAYOUTS: LayoutItem[] = [
+const LAYOUTS: AppLayout[] = [
   {
-    id: 'l1', name: 'Bento Grid Hero', category: 'marketing',
-    description: 'Apple WWDC-style asymmetric bento grid with featured card and info cells.',
-    tags: ['bento', 'hero', 'asymmetric'], trending: true,
-    preview: { type: 'bento', label: 'Bento Grid' },
-    code: `<section className="grid grid-cols-3 grid-rows-2 gap-3 h-[480px]">
-  <div className="col-span-2 row-span-2 rounded-2xl bg-gradient-to-br from-violet-600 to-indigo-600 p-8 flex flex-col justify-end">
-    <h1 className="text-4xl font-bold text-white">Main Feature</h1>
-    <p className="text-violet-200 mt-2">Your headline story or hero product.</p>
-  </div>
-  <div className="rounded-2xl bg-zinc-900 border border-zinc-800 p-5 flex flex-col justify-between">
-    <span className="text-xs text-zinc-500 uppercase tracking-wide">Metric</span>
-    <span className="text-3xl font-bold text-white">98%</span>
-  </div>
-  <div className="rounded-2xl bg-zinc-900 border border-zinc-800 p-5 flex items-center gap-3">
-    <div className="w-10 h-10 rounded-xl bg-violet-500/20 flex items-center justify-center">
-      <span className="text-xl">⚡</span>
-    </div>
-    <div>
-      <div className="text-sm font-semibold text-zinc-100">Fast</div>
-      <div className="text-xs text-zinc-500">Sub 100ms</div>
-    </div>
-  </div>
-</section>`,
-  },
-  {
-    id: 'l2', name: 'Holy Grail Dashboard', category: 'dashboard',
-    description: 'Classic sticky header, fixed sidebar, scrollable main, footer — the backbone of every admin UI.',
-    tags: ['dashboard', 'sidebar', 'admin'], trending: true,
-    preview: { type: 'dashboard', label: 'Dashboard' },
-    code: `<div className="h-screen flex flex-col">
-  {/* Header */}
-  <header className="h-14 border-b border-zinc-800 bg-zinc-950 flex items-center px-4 sticky top-0 z-10">
-    <span className="font-semibold text-zinc-100">Dashboard</span>
-  </header>
-  <div className="flex flex-1 overflow-hidden">
-    {/* Sidebar */}
-    <aside className="w-56 border-r border-zinc-800 bg-zinc-950 overflow-y-auto shrink-0">
-      <nav className="p-3 space-y-1">
-        {['Overview', 'Analytics', 'Users', 'Settings'].map(item => (
-          <button key={item} className="w-full text-left px-3 py-2 rounded-lg text-sm text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 transition-colors">{item}</button>
-        ))}
-      </nav>
-    </aside>
-    {/* Main */}
-    <main className="flex-1 overflow-y-auto p-6">
-      <div className="max-w-4xl mx-auto space-y-6">{/* content */}</div>
-    </main>
-  </div>
-</div>`,
-  },
-  {
-    id: 'l3', name: 'Magazine Editorial', category: 'blog',
-    description: 'Varied image sizes, pull quotes, and asymmetric columns — editorial print feel on the web.',
-    tags: ['magazine', 'editorial', 'blog'], trending: true,
-    preview: { type: 'magazine', label: 'Magazine' },
-    code: `<section className="max-w-6xl mx-auto grid grid-cols-12 gap-6">
-  {/* Lead story */}
-  <article className="col-span-8">
-    <div className="aspect-video rounded-xl overflow-hidden bg-zinc-800 mb-4" />
-    <div className="text-xs text-violet-400 uppercase tracking-widest mb-2">Feature</div>
-    <h2 className="text-3xl font-bold text-zinc-100 leading-tight mb-3">The Future of AI-Generated Design</h2>
-    <p className="text-zinc-400 leading-relaxed">Lorem ipsum dolor sit amet...</p>
-  </article>
-  {/* Sidebar stories */}
-  <aside className="col-span-4 space-y-5 border-l border-zinc-800 pl-6">
-    {[1,2,3].map(i => (
-      <div key={i} className="flex gap-3 pb-5 border-b border-zinc-800 last:border-0">
-        <div className="w-20 h-16 rounded-lg bg-zinc-800 shrink-0" />
-        <div>
-          <div className="text-xs text-zinc-500 mb-1">Topic #{i}</div>
-          <div className="text-sm font-semibold text-zinc-200 leading-tight">Article headline here</div>
-        </div>
+    id: "bento",
+    name: "Bento Grid",
+    category: "Creative",
+    description:
+      "Modern asymmetric grid layout popularised by Apple. High information density with a premium feel.",
+    trending: true,
+    preview: (
+      <div className="grid grid-cols-4 grid-rows-3 gap-2 h-full p-2">
+        <div className="col-span-2 row-span-2 rounded-lg bg-primary/20 border border-primary/30" />
+        <div className="col-span-2 rounded-lg bg-muted border" />
+        <div className="rounded-lg bg-muted border" />
+        <div className="rounded-lg bg-muted border" />
+        <div className="col-span-2 rounded-lg bg-primary/40 border border-primary/50" />
       </div>
-    ))}
-  </aside>
-</section>`,
+    ),
+    code: '<div className="grid grid-cols-4 gap-4">\n  <div className="col-span-2 row-span-2">...</div>\n  <div className="col-span-2">...</div>\n  <div>...</div>\n  <div>...</div>\n  <div className="col-span-2">...</div>\n</div>',
   },
   {
-    id: 'l4', name: 'Split Screen Hero', category: 'marketing',
-    description: 'Bold 50/50 split with contrasting visual left and text CTA right.',
-    tags: ['hero', 'split', 'landing'],
-    preview: { type: 'split', label: 'Split Screen' },
-    code: `<section className="min-h-screen grid grid-cols-1 lg:grid-cols-2">
-  {/* Visual half */}
-  <div className="relative bg-gradient-to-br from-violet-900 via-indigo-900 to-black flex items-center justify-center">
-    <div className="w-48 h-48 rounded-full bg-violet-500/20 blur-3xl absolute" />
-    <div className="text-8xl relative z-10">✨</div>
-  </div>
-  {/* Text half */}
-  <div className="bg-zinc-950 flex items-center px-12">
-    <div className="max-w-lg">
-      <div className="text-xs text-violet-400 uppercase tracking-widest mb-4">New Release</div>
-      <h1 className="text-5xl font-bold text-zinc-100 leading-tight mb-6">Build Something Extraordinary</h1>
-      <p className="text-lg text-zinc-400 mb-8">The AI studio that turns your ideas into reality.</p>
-      <div className="flex gap-3">
-        <button className="px-6 py-3 rounded-xl bg-violet-600 text-white font-semibold hover:bg-violet-500 transition-colors">Get Started</button>
-        <button className="px-6 py-3 rounded-xl border border-zinc-700 text-zinc-300 hover:bg-zinc-800 transition-colors">Learn More</button>
-      </div>
-    </div>
-  </div>
-</section>`,
-  },
-  {
-    id: 'l5', name: 'Floating Cards Grid', category: 'marketing',
-    description: 'Cards floating over a full-bleed gradient background — modern SaaS feature section.',
-    tags: ['cards', 'features', 'saas'], trending: true,
-    preview: { type: 'grid', label: 'Cards Grid' },
-    code: `<section className="relative py-24 px-4 overflow-hidden">
-  {/* Background */}
-  <div className="absolute inset-0 bg-gradient-to-b from-zinc-950 via-zinc-900 to-zinc-950" />
-  <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-violet-900/20 via-transparent to-transparent" />
-
-  <div className="relative z-10 max-w-5xl mx-auto">
-    <h2 className="text-4xl font-bold text-center text-zinc-100 mb-16">Everything You Need</h2>
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-      {features.map(f => (
-        <div key={f.id} className="rounded-2xl border border-zinc-800/80 bg-zinc-900/60 backdrop-blur p-6 hover:border-zinc-700 transition-all">
-          <div className="w-10 h-10 rounded-xl bg-violet-500/15 border border-violet-500/20 flex items-center justify-center mb-4">
-            <f.icon size={18} className="text-violet-400" />
-          </div>
-          <h3 className="text-base font-semibold text-zinc-100 mb-2">{f.title}</h3>
-          <p className="text-sm text-zinc-500 leading-relaxed">{f.desc}</p>
-        </div>
-      ))}
-    </div>
-  </div>
-</section>`,
-  },
-  {
-    id: 'l6', name: 'Masonry Gallery', category: 'ecommerce',
-    description: 'Pinterest-style masonry column layout for image-heavy content.',
-    tags: ['masonry', 'gallery', 'images'],
-    preview: { type: 'masonry', label: 'Masonry' },
-    code: `<div className="columns-2 sm:columns-3 lg:columns-4 gap-3 space-y-3">
-  {items.map((item, i) => (
-    <div
-      key={item.id}
-      className="break-inside-avoid rounded-xl overflow-hidden border border-zinc-800 bg-zinc-900 group cursor-pointer"
-      style={{ height: [180, 240, 160, 280, 200][i % 5] }}
-    >
-      <div className="w-full h-full bg-gradient-to-br from-zinc-800 to-zinc-700 group-hover:opacity-90 transition-opacity" />
-    </div>
-  ))}
-</div>`,
-  },
-  {
-    id: 'l7', name: 'Command Palette Layout', category: 'app',
-    description: 'Full-screen command-line / terminal aesthetic for power-user interfaces.',
-    tags: ['terminal', 'command', 'dark'], trending: true,
-    preview: { type: 'command', label: 'Command' },
-    code: `<div className="min-h-screen bg-zinc-950 font-mono text-sm">
-  {/* Status bar */}
-  <div className="border-b border-zinc-800 px-4 py-1.5 flex items-center justify-between">
-    <div className="flex items-center gap-3 text-zinc-500 text-xs">
-      <span className="text-emerald-400">● connected</span>
-      <span>novum-studio v2.0</span>
-    </div>
-    <span className="text-zinc-600 text-xs">{new Date().toLocaleTimeString()}</span>
-  </div>
-
-  {/* Command input */}
-  <div className="p-4 border-b border-zinc-800">
-    <div className="flex items-center gap-2">
-      <span className="text-violet-400">❯</span>
-      <input
-        className="flex-1 bg-transparent text-zinc-200 outline-none placeholder:text-zinc-700"
-        placeholder="Enter command..."
-      />
-    </div>
-  </div>
-
-  {/* Output */}
-  <div className="p-4 space-y-2">
-    {output.map((line, i) => (
-      <div key={i} className={`${
-        line.type === 'success' ? 'text-emerald-400' :
-        line.type === 'error' ? 'text-red-400' :
-        line.type === 'info' ? 'text-cyan-400' : 'text-zinc-400'
-      }`}>{line.text}</div>
-    ))}
-  </div>
-</div>`,
-  },
-  {
-    id: 'l8', name: 'Timeline Feed', category: 'app',
-    description: 'Vertical timeline with alternating cards — for activity feeds and changelogs.',
-    tags: ['timeline', 'feed', 'activity'],
-    preview: { type: 'timeline', label: 'Timeline' },
-    code: `<div className="max-w-2xl mx-auto py-8">
-  <div className="relative">
-    {/* Centre line */}
-    <div className="absolute left-6 top-0 bottom-0 w-px bg-zinc-800" />
-
-    <div className="space-y-6">
-      {events.map((event, i) => (
-        <div key={event.id} className="relative flex gap-5 pl-14">
-          {/* Dot */}
-          <div className="absolute left-[18px] top-1 w-4 h-4 rounded-full bg-zinc-950 border-2 border-violet-500 shrink-0" />
-
-          {/* Card */}
-          <div className="flex-1 rounded-xl border border-zinc-800 bg-zinc-900/60 p-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-semibold text-zinc-100">{event.title}</span>
-              <span className="text-xs text-zinc-600">{event.time}</span>
-            </div>
-            <p className="text-sm text-zinc-500">{event.description}</p>
+    id: "holy-grail",
+    name: "Holy Grail Dashboard",
+    category: "Dashboard",
+    description:
+      "Classic sidebar-based dashboard with a header, multi-panel content area, and optional right utility bar.",
+    preview: (
+      <div className="flex h-full gap-2 p-2">
+        <div className="w-8 rounded-lg bg-muted border" />
+        <div className="flex-1 flex flex-col gap-2">
+          <div className="h-4 rounded-lg bg-muted border" />
+          <div className="flex-1 grid grid-cols-3 gap-2">
+            <div className="col-span-2 rounded-lg bg-primary/20 border border-primary/30" />
+            <div className="rounded-lg bg-muted border" />
           </div>
         </div>
-      ))}
-    </div>
-  </div>
-</div>`,
+      </div>
+    ),
+    code: '<div className="flex h-screen">\n  <aside className="w-64">...</aside>\n  <main className="flex-1 flex flex-col">\n    <header>...</header>\n    <div className="grid grid-cols-3">...</div>\n  </main>\n</div>',
   },
   {
-    id: 'l9', name: 'Full Bleed Hero', category: 'marketing',
-    description: 'Edge-to-edge hero with video/gradient background and centered text overlay.',
-    tags: ['hero', 'full-bleed', 'cinematic'],
-    preview: { type: 'hero', label: 'Full Bleed' },
-    code: `<section className="relative h-screen flex items-center justify-center overflow-hidden">
-  {/* Background */}
-  <div className="absolute inset-0 bg-gradient-to-br from-zinc-950 via-violet-950 to-zinc-950" />
-  {/* Noise texture */}
-  <div className="absolute inset-0 opacity-[0.03] bg-[url('data:image/svg+xml,...')]" />
-  {/* Glow orbs */}
-  <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-violet-600/20 rounded-full blur-3xl" />
-  <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-indigo-600/20 rounded-full blur-3xl" />
-
-  {/* Content */}
-  <div className="relative z-10 text-center max-w-4xl mx-auto px-4">
-    <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-violet-500/30 bg-violet-500/10 text-violet-300 text-sm mb-8">
-      <span className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse" /> Now in Beta
-    </div>
-    <h1 className="text-6xl sm:text-8xl font-bold text-zinc-100 leading-none tracking-tight mb-6">
-      Create Without Limits
-    </h1>
-    <p className="text-xl text-zinc-400 max-w-2xl mx-auto mb-10">The complete AI creative studio.</p>
-    <button className="px-8 py-4 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-semibold text-lg transition-all">
-      Start Creating
-    </button>
-  </div>
-</section>`,
+    id: "magazine",
+    name: "Magazine Editorial",
+    category: "Content",
+    description:
+      "Asymmetric typography-heavy layout for deep reading and immersive visual storytelling.",
+    preview: (
+      <div className="grid grid-cols-3 grid-rows-4 gap-2 h-full p-2">
+        <div className="col-span-3 row-span-2 rounded-lg bg-muted border" />
+        <div className="col-span-2 row-span-2 rounded-lg bg-primary/20 border border-primary/30" />
+        <div className="rounded-lg bg-muted border" />
+        <div className="rounded-lg bg-muted border" />
+      </div>
+    ),
+    code: '<div className="grid grid-cols-3 gap-6">\n  <article className="col-span-2">...</article>\n  <aside>...</aside>\n</div>',
   },
   {
-    id: 'l10', name: 'Sticky Sidebar Docs', category: 'app',
-    description: 'Documentation-style layout with sticky TOC sidebar and scrollable content.',
-    tags: ['docs', 'sidebar', 'toc'],
-    preview: { type: 'sidebar', label: 'Docs Layout' },
-    code: `<div className="max-w-7xl mx-auto flex gap-8 px-4 py-8">
-  {/* TOC Sidebar */}
-  <aside className="hidden lg:block w-56 shrink-0">
-    <div className="sticky top-20">
-      <div className="text-xs font-semibold text-zinc-500 uppercase tracking-widest mb-3">On This Page</div>
-      <nav className="space-y-1">
-        {sections.map(s => (
-          <a key={s.id} href={\`#\${s.id}\`}
-            className="block text-sm text-zinc-500 hover:text-zinc-200 py-1 transition-colors">
-            {s.title}
-          </a>
-        ))}
-      </nav>
-    </div>
-  </aside>
-
-  {/* Content */}
-  <main className="flex-1 min-w-0 space-y-12">
-    {sections.map(s => (
-      <section key={s.id} id={s.id}>
-        <h2 className="text-2xl font-bold text-zinc-100 mb-4">{s.title}</h2>
-        <div className="prose prose-invert max-w-none">{s.content}</div>
-      </section>
-    ))}
-  </main>
-</div>`,
+    id: "split-hero",
+    name: "Split Screen Hero",
+    category: "Landing",
+    description:
+      "50/50 split layout focusing on a clear value proposition and a high-impact visual.",
+    preview: (
+      <div className="flex h-full gap-2 p-2">
+        <div className="flex-1 rounded-lg bg-primary/10 border border-primary/20 flex flex-col justify-center p-2 gap-1">
+          <div className="h-2 w-3/4 bg-primary/40 rounded" />
+          <div className="h-1.5 w-1/2 bg-primary/30 rounded" />
+          <div className="h-3 w-1/3 bg-primary rounded-md mt-1" />
+        </div>
+        <div className="flex-1 rounded-lg bg-muted border" />
+      </div>
+    ),
+    code: '<div className="flex flex-col lg:flex-row min-h-[80vh]">\n  <div className="flex-1">Content</div>\n  <div className="flex-1">Visual</div>\n</div>',
   },
-]
-
-const CATEGORIES: { id: LayoutCategory; label: string }[] = [
-  { id: 'all', label: 'All Layouts' },
-  { id: 'marketing', label: 'Marketing' },
-  { id: 'dashboard', label: 'Dashboard' },
-  { id: 'ecommerce', label: 'E-Commerce' },
-  { id: 'blog', label: 'Blog / Editorial' },
-  { id: 'app', label: 'App / Tool' },
-]
-
-const PREVIEW_ICONS: Record<LayoutItem['preview']['type'], React.ReactNode> = {
-  bento: <Grid size={24} />,
-  sidebar: <Columns size={24} />,
-  hero: <Square size={24} />,
-  grid: <Grid size={24} />,
-  split: <Columns size={24} />,
-  magazine: <Rows size={24} />,
-  masonry: <Grid size={24} />,
-  dashboard: <Layout size={24} />,
-  command: <Rows size={24} />,
-  timeline: <Rows size={24} />,
-}
+];
 
 export function LayoutsGallery() {
-  const [category, setCategory] = useState<LayoutCategory>('all')
-  const [copied, setCopied] = useState<string | null>(null)
-  const [expanded, setExpanded] = useState<string | null>(null)
+  const [category, setCategory] = useState<LayoutCategory>("All");
+  const [query, setQuery] = useState("");
+  const [selected, setSelected] = useState<string | null>(null);
 
-  const filtered = LAYOUTS.filter(l => category === 'all' || l.category === category)
-  const trending = filtered.filter(l => l.trending)
-  const rest = filtered.filter(l => !l.trending)
-
-  const handleCopy = (id: string, code: string) => {
-    navigator.clipboard.writeText(code)
-    setCopied(id)
-    setTimeout(() => setCopied(null), 2000)
-  }
+  const filtered = LAYOUTS.filter((l) => {
+    const matchCat = category === "All" || l.category === category;
+    const q = query.toLowerCase();
+    return (
+      matchCat &&
+      (l.name.toLowerCase().includes(q) ||
+        l.description.toLowerCase().includes(q))
+    );
+  });
 
   return (
-    <div className="h-full overflow-y-auto">
-      <div className="max-w-5xl mx-auto px-4 py-6 space-y-6">
-
+    <div className="h-full bg-background transition-colors duration-500 overflow-y-auto">
+      <div className="max-w-7xl mx-auto px-6 py-8 space-y-8">
         {/* Header */}
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <Layout size={15} className="text-violet-400" />
-            <span className="text-xs font-medium text-violet-400 uppercase tracking-widest">Layouts Gallery</span>
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 text-center md:text-left">
+          <div className="space-y-2">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary mb-2">
+              <Layers size={14} />
+              <span className="text-xs font-bold uppercase tracking-widest">
+                UI Architect
+              </span>
+            </div>
+            <h2 className="text-3xl font-extrabold tracking-tight">
+              Layout Blueprints
+            </h2>
+            <p className="text-muted-foreground max-w-lg">
+              Production-ready structural patterns for every interface type.
+              Verified for responsiveness and modern aesthetics.
+            </p>
           </div>
-          <h2 className="text-2xl font-semibold text-zinc-100">Production-Ready Layouts</h2>
-          <p className="text-sm text-zinc-500 mt-1">Copy Tailwind + React layout code. Drop into your project and customise.</p>
-        </div>
-
-        {/* Category Filter */}
-        <div className="flex flex-wrap gap-2">
-          {CATEGORIES.map(c => (
-            <button
-              key={c.id}
-              onClick={() => setCategory(c.id)}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
-                category === c.id
-                  ? 'bg-violet-600 border-violet-500 text-white'
-                  : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-700 hover:text-zinc-200'
-              }`}
+          <div className="flex items-center justify-center gap-2">
+            <Badge
+              variant="outline"
+              className="h-10 px-4 rounded-xl border-dashed"
             >
-              {c.label}
-            </button>
-          ))}
+              <Laptop size={14} className="mr-2 opacity-50" />
+              Fully Responsive
+            </Badge>
+          </div>
         </div>
 
-        {/* Trending */}
-        {trending.length > 0 && (
-          <div>
-            <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-widest mb-3">🔥 Trending 2026</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {trending.map(l => <LayoutCard key={l.id} layout={l} copied={copied} expanded={expanded} onCopy={handleCopy} onExpand={setExpanded} />)}
-            </div>
-          </div>
-        )}
+        {/* Toolbar */}
+        <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+          <Tabs
+            value={category}
+            onValueChange={(v) => setCategory(v as any)}
+            className="w-full md:w-auto overflow-x-auto"
+          >
+            <TabsList className="bg-muted/50 border p-1 rounded-xl h-11">
+              {["All", "Dashboard", "Landing", "Content", "Creative"].map(
+                (cat) => (
+                  <TabsTrigger
+                    key={cat}
+                    value={cat}
+                    className="text-xs px-6 rounded-lg"
+                  >
+                    {cat}
+                  </TabsTrigger>
+                ),
+              )}
+            </TabsList>
+          </Tabs>
 
-        {/* Rest */}
-        {rest.length > 0 && (
-          <div>
-            {trending.length > 0 && <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-widest mb-3">All Layouts</h3>}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {rest.map(l => <LayoutCard key={l.id} layout={l} copied={copied} expanded={expanded} onCopy={handleCopy} onExpand={setExpanded} />)}
-            </div>
+          <div className="relative w-full md:w-64">
+            <Search
+              size={14}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+            />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Filter patterns..."
+              className="w-full bg-muted/30 border-2 rounded-xl pl-9 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+            />
+          </div>
+        </div>
+
+        {/* Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-8">
+          <AnimatePresence mode="popLayout">
+            {filtered.map((layout) => (
+              <LayoutCard
+                key={layout.id}
+                layout={layout}
+                isSelected={selected === layout.id}
+                onSelect={() =>
+                  setSelected(selected === layout.id ? null : layout.id)
+                }
+              />
+            ))}
+          </AnimatePresence>
+        </div>
+
+        {filtered.length === 0 && (
+          <div className="py-20 text-center space-y-3 opacity-50">
+            <Layout size={40} className="mx-auto text-muted-foreground" />
+            <p>No layouts match your filter.</p>
           </div>
         )}
       </div>
     </div>
-  )
+  );
 }
 
 function LayoutCard({
-  layout, copied, expanded, onCopy, onExpand,
+  layout,
+  isSelected,
+  onSelect,
 }: {
-  layout: LayoutItem
-  copied: string | null
-  expanded: string | null
-  onCopy: (id: string, code: string) => void
-  onExpand: (id: string | null) => void
+  layout: AppLayout;
+  isSelected: boolean;
+  onSelect: () => void;
 }) {
-  const isExpanded = expanded === layout.id
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(layout.code);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   return (
     <motion.div
       layout
-      className="rounded-xl border border-zinc-800 bg-zinc-900/60 hover:border-zinc-700 transition-all overflow-hidden"
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.9 }}
+      className={`group relative rounded-3xl border-2 overflow-hidden transition-all duration-300 bg-card ${
+        isSelected
+          ? "border-primary ring-4 ring-primary/5"
+          : "border-border hover:border-primary/20 shadow-sm"
+      }`}
     >
-      {/* Preview */}
-      <div className="h-28 bg-zinc-950 border-b border-zinc-800 flex items-center justify-center relative">
-        <div className="text-zinc-700 opacity-60">{PREVIEW_ICONS[layout.preview.type]}</div>
-        <div className="absolute bottom-2 left-3 text-[10px] text-zinc-600 font-mono">{layout.preview.label}</div>
-        {layout.trending && (
-          <div className="absolute top-2 right-2 text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/30 text-amber-400">Trending</div>
-        )}
+      {/* Visual Canvas */}
+      <div
+        className="h-56 relative bg-muted/20 transition-colors group-hover:bg-muted/30 cursor-pointer"
+        onClick={onSelect}
+      >
+        <div className="absolute inset-0 p-6 transition-transform duration-500 group-hover:scale-105">
+          <div className="h-full rounded-2xl bg-background border-2 border-dashed border-primary/20 flex items-center justify-center overflow-hidden">
+            {layout.preview}
+          </div>
+        </div>
+        <div className="absolute inset-0 bg-gradient-to-t from-card/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+          <Button
+            variant="secondary"
+            size="sm"
+            className="rounded-full shadow-lg font-bold"
+          >
+            {isSelected ? "Collapse Pattern" : "Inspect Architecture"}
+          </Button>
+        </div>
       </div>
 
       {/* Info */}
-      <button
-        onClick={() => onExpand(isExpanded ? null : layout.id)}
-        className="w-full text-left p-4"
-      >
-        <div className="flex items-start justify-between gap-2">
-          <div>
-            <div className="text-sm font-semibold text-zinc-100 mb-0.5">{layout.name}</div>
-            <p className="text-xs text-zinc-500 leading-relaxed">{layout.description}</p>
-            <div className="flex flex-wrap gap-1 mt-2">
-              {layout.tags.map(tag => (
-                <span key={tag} className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-600 border border-zinc-700">{tag}</span>
-              ))}
+      <div className="p-6 space-y-4">
+        <div className="flex items-center justify-between">
+          <Badge
+            variant="secondary"
+            className="text-[10px] font-extrabold uppercase tracking-widest bg-primary/5 text-primary border-primary/10"
+          >
+            {layout.category}
+          </Badge>
+          {layout.trending && (
+            <div className="flex items-center gap-1 text-[10px] font-extrabold text-amber-500 animate-pulse">
+              <Sparkles size={10} /> TRENDING 2026
             </div>
-          </div>
+          )}
         </div>
-      </button>
 
-      {/* Code Expander */}
-      {isExpanded && (
-        <motion.div
-          initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: 'auto' }}
-          exit={{ opacity: 0, height: 0 }}
-          className="border-t border-zinc-800"
-        >
-          <div className="p-4 space-y-3">
-            <pre className="text-[11px] text-zinc-400 bg-zinc-950 rounded-lg p-3 overflow-x-auto font-mono leading-relaxed border border-zinc-800">
-              {layout.code}
-            </pre>
-            <div className="flex gap-2">
-              <button
-                onClick={() => onCopy(layout.id, layout.code)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-500 text-xs font-medium text-white transition-all"
-              >
-                {copied === layout.id ? <><Check size={11} /> Copied!</> : <><Copy size={11} /> Copy Code</>}
-              </button>
-              <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-zinc-700 bg-zinc-800 hover:bg-zinc-700 text-xs font-medium text-zinc-300 transition-all">
-                <ExternalLink size={11} /> Use in Builder
-              </button>
-            </div>
-          </div>
-        </motion.div>
-      )}
+        <div>
+          <h4 className="font-bold text-xl tracking-tight">{layout.name}</h4>
+          <p className="text-sm text-muted-foreground mt-2 leading-relaxed line-clamp-2">
+            {layout.description}
+          </p>
+        </div>
+
+        <AnimatePresence>
+          {isSelected && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="overflow-hidden space-y-4 pt-2"
+            >
+              <div className="relative group/code">
+                <pre className="text-[11px] bg-muted p-4 rounded-2xl font-mono text-muted-foreground overflow-x-auto border-2 border-primary/5">
+                  {layout.code}
+                </pre>
+                <button
+                  onClick={handleCopy}
+                  className="absolute top-3 right-3 p-2 rounded-xl bg-background border-2 opacity-0 group-hover/code:opacity-100 transition-opacity hover:border-primary hover:text-primary"
+                >
+                  {copied ? (
+                    <Check size={14} className="text-emerald-500" />
+                  ) : (
+                    <Copy size={14} />
+                  )}
+                </button>
+              </div>
+              <div className="flex gap-2 pt-2">
+                <Button className="flex-1 rounded-2xl h-12 font-bold shadow-lg shadow-primary/10">
+                  Implement Pattern
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="rounded-2xl h-12 w-12 border-2"
+                >
+                  <ExternalLink size={18} />
+                </Button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </motion.div>
-  )
+  );
 }

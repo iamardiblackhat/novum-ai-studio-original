@@ -1,428 +1,484 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { Sparkles, Play, Plus, Search, ChevronRight, Zap, Brain, GitBranch, Clock, Filter } from 'lucide-react'
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Sparkles,
+  Play,
+  Plus,
+  Search,
+  ChevronRight,
+  Zap,
+  Brain,
+  GitBranch,
+  Clock,
+  Filter,
+  Network,
+  Database,
+  Mail,
+  MessageSquare,
+  Globe,
+  Shield,
+  Cpu,
+  Activity,
+  Terminal,
+  Save,
+  Settings2,
+  MoreHorizontal,
+  Layers,
+  CheckCircle2,
+  Loader2,
+  ArrowRight,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { cn } from "@/lib/utils";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-type StepType = 'trigger' | 'ai' | 'action' | 'condition'
+type StepType = "trigger" | "ai" | "tool" | "condition";
 
-type WorkflowStep = {
-  id: string
-  type: StepType
-  label: string
-  description: string
-  icon: string
-  status: 'idle' | 'running' | 'done'
+interface WorkflowStep {
+  id: string;
+  type: StepType;
+  name: string;
+  description: string;
+  status: "idle" | "running" | "success" | "error";
+  icon: any;
 }
 
-type AutomationTemplate = {
-  id: string
-  title: string
-  description: string
-  category: 'support' | 'dev' | 'sales' | 'custom'
-  steps: WorkflowStep[]
+interface AutomationTemplate {
+  id: string;
+  title: string;
+  description: string;
+  category: "Operations" | "Growth" | "Security" | "Dev";
+  steps: WorkflowStep[];
 }
 
-type Project = {
-  id: string
-  title: string
-  category: string
-  lastRun: string
-  status: 'active' | 'paused' | 'draft'
-  runs: number
-}
+// ─── Real 2026 High-Value Workflows ──────────────────────────────────────────
 
-// ─── Data ────────────────────────────────────────────────────────────────────
-
-const TEMPLATES: AutomationTemplate[] = [
+const REAL_TEMPLATES: AutomationTemplate[] = [
   {
-    id: 'summarize-support',
-    title: 'Summarize customer support tickets',
-    description: 'Auto-classify, summarize, and route inbound support tickets.',
-    category: 'support',
+    id: "rag-responder",
+    title: "RAG-Powered Email Responder",
+    description:
+      "IMAP Trigger → Qdrant Vector Search → DeepSeek Draft → Human Audit",
+    category: "Operations",
     steps: [
-      { id: 's1', type: 'trigger', label: 'New Ticket', description: 'Webhook from Zendesk / Intercom', icon: '📨', status: 'idle' },
-      { id: 's2', type: 'ai', label: 'LLM Classify', description: 'Categorise: Bug / Billing / Feature', icon: '🧠', status: 'idle' },
-      { id: 's3', type: 'ai', label: 'Summarise', description: 'Generate 2-sentence summary', icon: '✍️', status: 'idle' },
-      { id: 's4', type: 'condition', label: 'Priority Check', description: 'If priority = HIGH → escalate', icon: '⚡', status: 'idle' },
-      { id: 's5', type: 'action', label: 'Route & Notify', description: 'Assign agent + Slack alert', icon: '📤', status: 'idle' },
+      {
+        id: "s1",
+        type: "trigger",
+        name: "IMAP Inbound",
+        description: "Monitor high-priority inbox",
+        status: "idle",
+        icon: Mail,
+      },
+      {
+        id: "s2",
+        type: "tool",
+        name: "Vector Context",
+        description: "Query RAG knowledge base",
+        status: "idle",
+        icon: Database,
+      },
+      {
+        id: "s3",
+        type: "ai",
+        name: "Synthesis Agent",
+        description: "Generate contextual response",
+        status: "idle",
+        icon: Brain,
+      },
+      {
+        id: "s4",
+        type: "tool",
+        name: "Draft Notification",
+        description: "Push to Slack for approval",
+        status: "idle",
+        icon: Network,
+      },
     ],
   },
   {
-    id: 'triage-github',
-    title: 'Triage GitHub issues',
-    description: 'Label, prioritise, and assign new GitHub issues automatically.',
-    category: 'dev',
+    id: "lead-enrich",
+    title: "AI Lead Enrichment Engine",
+    description: "Webhook → Apollo Enrich → ICP Scoring → CRM Distribution",
+    category: "Growth",
     steps: [
-      { id: 'g1', type: 'trigger', label: 'Issue Opened', description: 'GitHub webhook on issues.opened', icon: '🐛', status: 'idle' },
-      { id: 'g2', type: 'ai', label: 'Analyse Context', description: 'Read repo README + issue body', icon: '🧠', status: 'idle' },
-      { id: 'g3', type: 'ai', label: 'Label & Score', description: 'bug / enhancement / critical', icon: '🏷️', status: 'idle' },
-      { id: 'g4', type: 'condition', label: 'Duplicate Check', description: 'Semantic similarity vs open issues', icon: '🔍', status: 'idle' },
-      { id: 'g5', type: 'action', label: 'Apply & Assign', description: 'GitHub API: set labels + assignee', icon: '✅', status: 'idle' },
+      {
+        id: "l1",
+        type: "trigger",
+        name: "Form Submission",
+        description: "Inbound lead webhook",
+        status: "idle",
+        icon: Zap,
+      },
+      {
+        id: "l2",
+        type: "tool",
+        name: "Data Enrichment",
+        description: "Apollo/Clearbit lookup",
+        status: "idle",
+        icon: Globe,
+      },
+      {
+        id: "l3",
+        type: "ai",
+        name: "ICP Scoring",
+        description: "Evaluate lead potential",
+        status: "idle",
+        icon: Cpu,
+      },
+      {
+        id: "l4",
+        type: "tool",
+        name: "CRM Pipeline",
+        description: "Auto-assign & Push to CRM",
+        status: "idle",
+        icon: Layers,
+      },
     ],
   },
   {
-    id: 'score-leads',
-    title: 'Score inbound leads',
-    description: 'Enrich, score, and qualify new leads from any form or CRM trigger.',
-    category: 'sales',
+    id: "content-agent",
+    title: "Multi-Agent Content Repurposer",
+    description: "YouTube Link → Transcript Synthesis → Thread/Post Generation",
+    category: "Operations",
     steps: [
-      { id: 'l1', type: 'trigger', label: 'Form Submission', description: 'Typeform / HubSpot / webhook', icon: '📋', status: 'idle' },
-      { id: 'l2', type: 'action', label: 'Enrich Lead', description: 'Apollo / Clearbit company data', icon: '🔎', status: 'idle' },
-      { id: 'l3', type: 'ai', label: 'Score (0–100)', description: 'ICP match + intent signals', icon: '🧠', status: 'idle' },
-      { id: 'l4', type: 'condition', label: 'Score Gate', description: 'Score ≥ 70 → hot lead path', icon: '🎯', status: 'idle' },
-      { id: 'l5', type: 'action', label: 'CRM + Notify', description: 'Push to pipeline + Slack DM', icon: '💼', status: 'idle' },
+      {
+        id: "c1",
+        type: "trigger",
+        name: "Media Trigger",
+        description: "Inbound video/audio URL",
+        status: "idle",
+        icon: Globe,
+      },
+      {
+        id: "c2",
+        type: "ai",
+        name: "Logic Partitioning",
+        description: "Break down core arguments",
+        status: "idle",
+        icon: Database,
+      },
+      {
+        id: "c3",
+        type: "ai",
+        name: "Social Formatting",
+        description: "Multi-platform rewrite",
+        status: "idle",
+        icon: Bot,
+      },
+      {
+        id: "c4",
+        type: "tool",
+        name: "Publishing Queue",
+        description: "Schedule to buffer/Hypefury",
+        status: "idle",
+        icon: Save,
+      },
     ],
   },
-]
-
-const RECENT_PROJECTS: Project[] = [
-  { id: 'p1', title: 'Novum Syndicate Lead Scorer', category: 'sales', lastRun: '2 hours ago', status: 'active', runs: 247 },
-  { id: 'p2', title: 'GitHub Issue Triage — novumaistudiomain', category: 'dev', lastRun: '1 day ago', status: 'active', runs: 89 },
-  { id: 'p3', title: 'Support Ticket Router', category: 'support', lastRun: '3 days ago', status: 'paused', runs: 512 },
-]
-
-const SUGGESTED_PROMPTS = [
-  'Summarize customer support tickets',
-  'Triage GitHub issues',
-  'Score inbound leads',
-  'Send weekly digest to Slack',
-  'Auto-reply to cold emails',
-  'Monitor competitor pricing',
-]
-
-const TYPE_COLORS: Record<StepType, { border: string; bg: string; text: string; dot: string }> = {
-  trigger:   { border: 'border-violet-500/40', bg: 'bg-violet-500/10', text: 'text-violet-300', dot: 'bg-violet-400' },
-  ai:        { border: 'border-cyan-500/40',   bg: 'bg-cyan-500/10',   text: 'text-cyan-300',   dot: 'bg-cyan-400' },
-  action:    { border: 'border-emerald-500/40',bg: 'bg-emerald-500/10',text: 'text-emerald-300',dot: 'bg-emerald-400' },
-  condition: { border: 'border-amber-500/40',  bg: 'bg-amber-500/10',  text: 'text-amber-300',  dot: 'bg-amber-400' },
-}
-
-const STATUS_COLORS: Record<Project['status'], string> = {
-  active: 'text-emerald-400 bg-emerald-400/10 border-emerald-400/30',
-  paused: 'text-amber-400 bg-amber-400/10 border-amber-400/30',
-  draft:  'text-zinc-400 bg-zinc-400/10 border-zinc-400/30',
-}
-
-const CATEGORY_ICONS: Record<string, string> = {
-  support: '🎧',
-  dev: '⚙️',
-  sales: '💰',
-  custom: '✨',
-}
-
-// ─── Sub-components ───────────────────────────────────────────────────────────
-
-function WorkflowNode({
-  step, index, isLast, isAnimating,
-}: {
-  step: WorkflowStep
-  index: number
-  isLast: boolean
-  isAnimating: boolean
-}) {
-  const c = TYPE_COLORS[step.type]
-  const delay = index * 0.12
-  return (
-    <div className="flex flex-col items-center">
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay, duration: 0.35, ease: 'easeOut' }}
-        className={`relative w-full rounded-xl border ${c.border} ${c.bg} px-4 py-3 flex items-center gap-3`}
-      >
-        {isAnimating && (
-          <motion.div
-            className={`absolute inset-0 rounded-xl ${c.bg} opacity-0`}
-            animate={{ opacity: [0, 0.6, 0] }}
-            transition={{ duration: 1.2, delay: index * 0.3, repeat: Infinity }}
-          />
-        )}
-        <span className="text-xl shrink-0">{step.icon}</span>
-        <div className="flex-1 min-w-0">
-          <div className={`text-sm font-medium ${c.text}`}>{step.label}</div>
-          <div className="text-xs text-zinc-500 truncate">{step.description}</div>
-        </div>
-        <div className={`shrink-0 w-2 h-2 rounded-full ${c.dot} ${isAnimating ? 'animate-pulse' : ''}`} />
-      </motion.div>
-      {!isLast && (
-        <motion.div
-          initial={{ opacity: 0, scaleY: 0 }}
-          animate={{ opacity: 1, scaleY: 1 }}
-          transition={{ delay: delay + 0.2 }}
-          className="w-px h-5 bg-gradient-to-b from-zinc-600/60 to-zinc-700/20 origin-top"
-        />
-      )}
-    </div>
-  )
-}
-
-function ProjectCard({ project, onClick }: { project: Project; onClick: () => void }) {
-  return (
-    <motion.button
-      whileHover={{ scale: 1.01 }}
-      whileTap={{ scale: 0.99 }}
-      onClick={onClick}
-      className="w-full text-left rounded-xl border border-zinc-800 bg-zinc-900/50 hover:border-zinc-700 hover:bg-zinc-900 transition-all p-4"
-    >
-      <div className="flex items-start justify-between gap-2 mb-2">
-        <div className="flex items-center gap-2">
-          <span className="text-base">{CATEGORY_ICONS[project.category]}</span>
-          <span className="text-sm font-medium text-zinc-100 leading-tight">{project.title}</span>
-        </div>
-        <span className={`shrink-0 text-[10px] font-medium px-2 py-0.5 rounded-full border ${STATUS_COLORS[project.status]}`}>
-          {project.status}
-        </span>
-      </div>
-      <div className="flex items-center gap-3 text-xs text-zinc-500">
-        <span className="flex items-center gap-1"><Clock size={10} /> {project.lastRun}</span>
-        <span className="flex items-center gap-1"><Play size={10} /> {project.runs} runs</span>
-      </div>
-    </motion.button>
-  )
-}
-
-// ─── Main Component ───────────────────────────────────────────────────────────
+];
 
 export function AutomationsBuilder() {
-  const [prompt, setPrompt] = useState('')
-  const [activeTemplate, setActiveTemplate] = useState<AutomationTemplate | null>(null)
-  const [isGenerating, setIsGenerating] = useState(false)
-  const [isRunning, setIsRunning] = useState(false)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [activeFilter, setActiveFilter] = useState<'all' | 'mine' | 'shared'>('all')
-  const [generatedSteps, setGeneratedSteps] = useState<WorkflowStep[]>([])
+  const [prompt, setPrompt] = useState("");
+  const [selectedTemplate, setSelectedTemplate] =
+    useState<AutomationTemplate | null>(REAL_TEMPLATES[0]);
+  const [isExecuting, setIsExecuting] = useState(false);
+  const [activeStep, setActiveStep] = useState<string | null>(null);
 
-  const handleGenerate = async () => {
-    if (!prompt.trim()) return
-    setIsGenerating(true)
-    setActiveTemplate(null)
-    setGeneratedSteps([])
+  const handleDeploy = async () => {
+    if (!selectedTemplate || isExecuting) return;
+    setIsExecuting(true);
 
-    // Match prompt to a template, or use a generic fallback
-    const matched = TEMPLATES.find(t =>
-      prompt.toLowerCase().includes(t.title.split(' ').slice(0, 3).join(' ').toLowerCase())
-    )
+    // Step-by-step orchestration animation
+    for (const step of selectedTemplate.steps) {
+      setActiveStep(step.id);
+      setSelectedTemplate((prev) =>
+        prev
+          ? {
+              ...prev,
+              steps: prev.steps.map((s) =>
+                s.id === step.id ? { ...s, status: "running" } : s,
+              ),
+            }
+          : null,
+      );
 
-    await new Promise(r => setTimeout(r, 900))
+      await new Promise((r) => setTimeout(r, 1000));
 
-    if (matched) {
-      setActiveTemplate(matched)
-      setGeneratedSteps(matched.steps)
-    } else {
-      // Generic AI-generated workflow
-      const fallback: WorkflowStep[] = [
-        { id: 'f1', type: 'trigger', label: 'Trigger', description: prompt.slice(0, 40), icon: '⚡', status: 'idle' },
-        { id: 'f2', type: 'ai', label: 'AI Process', description: 'Analyse and transform input', icon: '🧠', status: 'idle' },
-        { id: 'f3', type: 'condition', label: 'Check Result', description: 'Validate AI output', icon: '🔍', status: 'idle' },
-        { id: 'f4', type: 'action', label: 'Execute', description: 'Send output to destination', icon: '📤', status: 'idle' },
-      ]
-      setGeneratedSteps(fallback)
+      setSelectedTemplate((prev) =>
+        prev
+          ? {
+              ...prev,
+              steps: prev.steps.map((s) =>
+                s.id === step.id ? { ...s, status: "success" } : s,
+              ),
+            }
+          : null,
+      );
     }
 
-    setIsGenerating(false)
-  }
+    setIsExecuting(false);
+    setActiveStep(null);
+  };
 
-  const handleRun = async () => {
-    if (!generatedSteps.length) return
-    setIsRunning(true)
-    await new Promise(r => setTimeout(r, generatedSteps.length * 400))
-    setIsRunning(false)
-  }
-
-  const handleTemplateClick = (t: AutomationTemplate) => {
-    setActiveTemplate(t)
-    setGeneratedSteps(t.steps)
-    setPrompt(t.title)
-  }
+  const resetWorkflow = (template: AutomationTemplate) => {
+    setSelectedTemplate({
+      ...template,
+      steps: template.steps.map((s) => ({ ...s, status: "idle" })),
+    });
+    setIsExecuting(false);
+    setActiveStep(null);
+  };
 
   return (
-    <div className="flex h-full gap-6 flex-col lg:flex-row">
+    <div className="h-full flex flex-col lg:flex-row gap-6 bg-background">
+      {/* Configuration Hub */}
+      <Card className="lg:w-[360px] flex flex-col border-2 border-primary/5 rounded-[2rem] shadow-xl overflow-hidden">
+        <div className="p-6 border-b bg-muted/20">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="h-10 w-10 rounded-2xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20 rotate-3">
+              <Zap size={20} className="text-primary-foreground -rotate-3" />
+            </div>
+            <div>
+              <h3 className="font-black text-sm uppercase tracking-tight">
+                Automation Hub
+              </h3>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest leading-none">
+                  Logic Architect
+                </span>
+              </div>
+            </div>
+          </div>
 
-      {/* ── Left Panel ────────────────────────────────── */}
-      <div className="lg:w-[340px] shrink-0 flex flex-col gap-4">
-
-        {/* Prompt Box */}
-        <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-4 flex flex-col gap-3">
-          <h2 className="text-sm font-semibold text-zinc-100 flex items-center gap-2">
-            <Sparkles size={14} className="text-cyan-400" />
-            Build AI Powered Automations
-          </h2>
-          <textarea
-            rows={3}
-            className="w-full resize-none rounded-xl bg-zinc-800/60 border border-zinc-700/50 text-sm text-zinc-100 placeholder:text-zinc-600 px-3 py-2 focus:outline-none focus:border-cyan-500/50 transition-colors"
-            placeholder="Describe the automation you want to build..."
-            value={prompt}
-            onChange={e => setPrompt(e.target.value)}
-            onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleGenerate() }}
-          />
-          <button
-            onClick={handleGenerate}
-            disabled={isGenerating || !prompt.trim()}
-            className="flex items-center justify-center gap-2 w-full rounded-xl bg-cyan-500 hover:bg-cyan-400 disabled:opacity-40 disabled:cursor-not-allowed text-zinc-900 font-semibold text-sm py-2.5 transition-colors"
-          >
-            {isGenerating ? (
-              <><span className="animate-spin">◌</span> Generating...</>
-            ) : (
-              <><Sparkles size={14} /> Generate Workflow</>
-            )}
-          </button>
-          {/* Suggested prompts */}
-          <div className="flex flex-wrap gap-1.5">
-            {SUGGESTED_PROMPTS.map(p => (
-              <button
-                key={p}
-                onClick={() => { setPrompt(p); }}
-                className="text-[11px] text-zinc-400 hover:text-zinc-200 px-2 py-1 rounded-lg border border-zinc-800 hover:border-zinc-600 transition-colors"
-              >
-                {p}
-              </button>
-            ))}
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">
+                Synthesis Instructions
+              </Label>
+              <Textarea
+                placeholder="Describe a new agentic pipeline..."
+                className="min-h-[100px] rounded-2xl border-2 bg-background focus-visible:ring-primary/20 resize-none text-sm font-medium"
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+              />
+            </div>
+            <Button
+              className="w-full h-12 rounded-2xl font-black uppercase tracking-widest shadow-lg shadow-primary/10"
+              disabled={!prompt.trim()}
+            >
+              Forge Automation
+            </Button>
           </div>
         </div>
 
-        {/* Recent Projects */}
-        <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-4 flex flex-col gap-3 flex-1">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-zinc-100">Recent Projects</h3>
-            <button className="text-[11px] text-zinc-500 hover:text-zinc-300 flex items-center gap-1">
-              <Filter size={10} /> Filter
-            </button>
-          </div>
-          {/* Filter tabs */}
-          <div className="flex gap-1">
-            {(['all', 'mine', 'shared'] as const).map(f => (
-              <button
-                key={f}
-                onClick={() => setActiveFilter(f)}
-                className={`text-[11px] px-2.5 py-1 rounded-lg capitalize transition-colors ${
-                  activeFilter === f
-                    ? 'bg-zinc-700 text-zinc-100'
-                    : 'text-zinc-500 hover:text-zinc-300'
-                }`}
-              >
-                {f}
-              </button>
-            ))}
-          </div>
-          {/* Search */}
-          <div className="relative">
-            <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-600" />
-            <input
-              className="w-full pl-7 pr-3 py-1.5 rounded-lg bg-zinc-800/60 border border-zinc-700/50 text-xs text-zinc-300 placeholder:text-zinc-600 focus:outline-none focus:border-cyan-500/50 transition-colors"
-              placeholder="Search projects..."
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-            />
-          </div>
-          {/* Project list */}
-          <div className="flex flex-col gap-2">
-            {RECENT_PROJECTS
-              .filter(p => !searchQuery || p.title.toLowerCase().includes(searchQuery.toLowerCase()))
-              .map(p => (
-                <ProjectCard key={p.id} project={p} onClick={() => {}} />
-              ))
-            }
-          </div>
-          <button className="mt-auto flex items-center gap-2 w-full rounded-xl border border-dashed border-zinc-700 hover:border-zinc-500 text-zinc-500 hover:text-zinc-300 text-xs py-2.5 justify-center transition-colors">
-            <Plus size={12} /> Create New
-          </button>
-        </div>
-      </div>
-
-      {/* ── Right Panel: Canvas ────────────────────────── */}
-      <div className="flex-1 flex flex-col gap-4">
-        {generatedSteps.length === 0 ? (
-          /* Empty state — template picker */
-          <div className="flex-1 rounded-2xl border border-zinc-800 bg-zinc-900/40 flex flex-col items-center justify-center gap-6 p-8">
-            <div className="text-center">
-              <Zap size={32} className="text-zinc-700 mx-auto mb-3" />
-              <p className="text-zinc-400 text-sm">Describe an automation above, or pick a template</p>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full max-w-2xl">
-              {TEMPLATES.map(t => (
-                <button
-                  key={t.id}
-                  onClick={() => handleTemplateClick(t)}
-                  className="text-left rounded-xl border border-zinc-800 bg-zinc-900/60 hover:border-cyan-500/40 hover:bg-zinc-800/80 p-4 transition-all group"
-                >
-                  <span className="text-2xl mb-2 block">{CATEGORY_ICONS[t.category]}</span>
-                  <p className="text-xs font-semibold text-zinc-200 mb-1 leading-tight">{t.title}</p>
-                  <p className="text-[11px] text-zinc-500 line-clamp-2">{t.description}</p>
-                  <div className="flex items-center gap-1 mt-3 text-[10px] text-cyan-500 opacity-0 group-hover:opacity-100 transition-opacity">
-                    Use template <ChevronRight size={10} />
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-        ) : (
-          <>
-            {/* Workflow header */}
-            <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-4 flex items-center justify-between gap-4">
-              <div>
-                <h3 className="text-sm font-semibold text-zinc-100">
-                  {activeTemplate?.title || prompt.slice(0, 60)}
-                </h3>
-                <p className="text-xs text-zinc-500 mt-0.5">
-                  {generatedSteps.length} steps · {activeTemplate?.category || 'custom'}
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => { setGeneratedSteps([]); setActiveTemplate(null); setPrompt('') }}
-                  className="text-xs text-zinc-500 hover:text-zinc-300 px-3 py-1.5 rounded-lg border border-zinc-700 hover:border-zinc-600 transition-colors"
-                >
-                  Clear
-                </button>
-                <button
-                  onClick={handleRun}
-                  disabled={isRunning}
-                  className="flex items-center gap-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 disabled:opacity-40 text-zinc-900 font-semibold text-xs px-4 py-2 transition-colors"
-                >
-                  {isRunning ? (
-                    <><span className="animate-spin">◌</span> Running...</>
-                  ) : (
-                    <><Play size={12} /> Run Workflow</>
-                  )}
-                </button>
-              </div>
-            </div>
-
-            {/* Workflow canvas */}
-            <AnimatePresence mode="wait">
+        <ScrollArea className="flex-1">
+          <div className="p-4 space-y-3">
+            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 mb-2 ml-2">
+              Neural Templates
+            </h4>
+            {REAL_TEMPLATES.map((t) => (
               <motion.div
-                key={generatedSteps.map(s => s.id).join('-')}
-                className="flex-1 rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6 overflow-y-auto"
+                key={t.id}
+                layout
+                onClick={() => resetWorkflow(t)}
+                className={cn(
+                  "p-4 rounded-2xl border-2 transition-all cursor-pointer group",
+                  selectedTemplate?.id === t.id
+                    ? "bg-primary/5 border-primary"
+                    : "bg-card border-transparent hover:border-primary/20",
+                )}
               >
-                <div className="max-w-sm mx-auto flex flex-col gap-0">
-                  {generatedSteps.map((step, i) => (
-                    <WorkflowNode
+                <div className="flex items-start justify-between mb-1">
+                  <Badge
+                    variant="outline"
+                    className="text-[8px] font-black uppercase h-4 px-1.5"
+                  >
+                    {t.category}
+                  </Badge>
+                </div>
+                <h5 className="font-black text-xs uppercase tracking-tight truncate">
+                  {t.title}
+                </h5>
+                <p className="text-[10px] font-medium text-muted-foreground line-clamp-1 mt-1">
+                  {t.description}
+                </p>
+              </motion.div>
+            ))}
+          </div>
+        </ScrollArea>
+      </Card>
+
+      {/* Logic Canvas */}
+      <div className="flex-1 flex flex-col gap-6 min-w-0">
+        <Card className="flex-1 border-2 border-primary/5 rounded-[2.5rem] shadow-2xl bg-muted/5 relative overflow-hidden flex flex-col">
+          <div
+            className="absolute inset-0 opacity-[0.03] pointer-events-none"
+            style={{
+              backgroundImage:
+                "radial-gradient(circle, currentColor 1px, transparent 1px)",
+              backgroundSize: "24px 24px",
+            }}
+          />
+
+          {selectedTemplate ? (
+            <>
+              <div className="px-8 py-6 border-b bg-background/40 backdrop-blur-xl flex items-center justify-between z-20">
+                <div>
+                  <h3 className="text-2xl font-black tracking-tight uppercase leading-none">
+                    {selectedTemplate.title}
+                  </h3>
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mt-2">
+                    Active Architecture v2.0.4
+                  </p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="rounded-xl h-11 w-11"
+                  >
+                    <Settings2 />
+                  </Button>
+                  <Button
+                    className="rounded-xl h-11 px-8 font-black uppercase tracking-widest shadow-lg shadow-primary/20"
+                    onClick={handleDeploy}
+                    disabled={isExecuting}
+                  >
+                    {isExecuting ? (
+                      <Loader2 size={18} className="mr-2 animate-spin" />
+                    ) : (
+                      <Play size={18} className="mr-2" fill="currentColor" />
+                    )}
+                    Deploy Logic
+                  </Button>
+                </div>
+              </div>
+
+              <div className="flex-1 p-10 flex flex-col items-center justify-center relative overflow-auto">
+                <div className="flex flex-col items-center gap-12 relative z-10 w-full max-w-md">
+                  {selectedTemplate.steps.map((step, idx) => (
+                    <motion.div
                       key={step.id}
-                      step={step}
-                      index={i}
-                      isLast={i === generatedSteps.length - 1}
-                      isAnimating={isRunning}
-                    />
+                      className="relative w-full"
+                      animate={
+                        activeStep === step.id ? { scale: 1.02 } : { scale: 1 }
+                      }
+                    >
+                      <Card
+                        className={cn(
+                          "p-5 rounded-[1.75rem] border-2 transition-all flex items-center gap-4 relative z-10",
+                          step.status === "running"
+                            ? "border-primary bg-primary/5 shadow-2xl"
+                            : step.status === "success"
+                              ? "border-emerald-500/50 bg-emerald-500/5"
+                              : "bg-card border-primary/5 shadow-xl",
+                        )}
+                      >
+                        <div
+                          className={cn(
+                            "h-12 w-12 rounded-xl flex items-center justify-center shadow-inner transition-colors",
+                            step.status === "running"
+                              ? "bg-primary text-primary-foreground"
+                              : step.status === "success"
+                                ? "bg-emerald-500 text-white"
+                                : "bg-muted text-muted-foreground",
+                          )}
+                        >
+                          <step.icon size={24} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/60 mb-0.5">
+                            {step.type}
+                          </p>
+                          <h6 className="text-sm font-black uppercase tracking-tight truncate">
+                            {step.name}
+                          </h6>
+                        </div>
+                        {step.status === "success" && (
+                          <CheckCircle2
+                            size={20}
+                            className="text-emerald-500"
+                          />
+                        )}
+                        {step.status === "running" && (
+                          <Loader2
+                            size={20}
+                            className="text-primary animate-spin"
+                          />
+                        )}
+                      </Card>
+
+                      {idx < selectedTemplate.steps.length - 1 && (
+                        <div className="absolute left-1/2 top-full h-12 w-0.5 -translate-x-1/2 bg-gradient-to-b from-primary/20 to-transparent">
+                          <motion.div
+                            initial={{ top: 0 }}
+                            animate={isExecuting ? { top: "100%" } : { top: 0 }}
+                            transition={{ repeat: Infinity, duration: 1 }}
+                            className="absolute left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-primary blur-[2px]"
+                          />
+                        </div>
+                      )}
+                    </motion.div>
                   ))}
                 </div>
-              </motion.div>
-            </AnimatePresence>
-
-            {/* Legend */}
-            <div className="flex flex-wrap gap-3 px-1">
-              {(Object.entries(TYPE_COLORS) as [StepType, typeof TYPE_COLORS[StepType]][]).map(([type, c]) => (
-                <div key={type} className="flex items-center gap-1.5 text-[11px] text-zinc-500">
-                  <div className={`w-2 h-2 rounded-full ${c.dot}`} />
-                  <span className="capitalize">{type}</span>
-                </div>
-              ))}
+              </div>
+            </>
+          ) : (
+            <div className="flex-1 flex flex-col items-center justify-center space-y-6 opacity-20">
+              <Zap size={64} />
+              <p className="font-black uppercase tracking-[0.3em] text-xs">
+                Architectural Voids Detected
+              </p>
             </div>
-          </>
-        )}
+          )}
+        </Card>
+
+        {/* Console */}
+        <Card className="h-[180px] border-2 border-primary/5 rounded-[2rem] shadow-xl overflow-hidden bg-zinc-950 flex flex-col">
+          <div className="px-6 py-3 border-b border-white/5 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Terminal size={14} className="text-primary" />
+              <span className="text-[10px] font-black uppercase tracking-widest text-primary/60">
+                Dispatcher Console
+              </span>
+            </div>
+            <Badge
+              variant="outline"
+              className="text-[8px] font-black uppercase text-primary border-primary/20"
+            >
+              Live Stream
+            </Badge>
+          </div>
+          <ScrollArea className="flex-1 p-4 font-mono text-[10px] leading-relaxed">
+            <div className="space-y-1">
+              <p className="text-primary/40">
+                [BOOT] Novum Orchestrator initialised...
+              </p>
+              {isExecuting && (
+                <div className="space-y-1 text-emerald-500">
+                  <p>[EXEC] Mounting logic signature: {selectedTemplate?.id}</p>
+                  <p>
+                    [INFO] Establishing neural link with relay {activeStep}...
+                  </p>
+                  <p>[WARN] Handling token pressure in synthesis agent...</p>
+                </div>
+              )}
+              {!isExecuting && (
+                <p className="text-white/20">
+                  [IDLE] Awaiting deployment signal.
+                </p>
+              )}
+            </div>
+          </ScrollArea>
+        </Card>
       </div>
     </div>
-  )
+  );
 }

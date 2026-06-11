@@ -1,249 +1,518 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
-  Plus, Play, Trash2, GitBranch, Zap,
-  Bot, Globe, Mail, FileText, Database,
-  CheckCircle2, Clock, Loader2, ArrowRight
-} from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import { ScrollArea } from '@/components/ui/scroll-area'
+  Plus,
+  Play,
+  Trash2,
+  GitBranch,
+  Zap,
+  Bot,
+  Globe,
+  Mail,
+  FileText,
+  Database,
+  CheckCircle2,
+  Clock,
+  Loader2,
+  ArrowRight,
+  Shield,
+  Network,
+  Workflow,
+  Activity,
+  Terminal,
+  Share2,
+  Save,
+  Settings2,
+  MoreHorizontal,
+  Sparkles,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
 
 interface WorkflowStep {
-  id: string
-  type: 'trigger' | 'ai' | 'action'
-  name: string
-  description: string
-  icon: string
-}
-
-interface WorkflowRun {
-  id: string
-  startedAt: string
-  status: 'running' | 'completed' | 'failed'
-  output?: string
+  id: string;
+  type: "trigger" | "ai" | "tool" | "condition";
+  name: string;
+  status: "idle" | "running" | "success" | "error";
+  icon: any;
 }
 
 interface Workflow {
-  id: string
-  name: string
-  description: string
-  steps: WorkflowStep[]
-  runs: WorkflowRun[]
-  isRunning: boolean
+  id: string;
+  name: string;
+  description: string;
+  category: "Operations" | "Marketing" | "DevOps" | "Sales";
+  steps: WorkflowStep[];
+  status: "idle" | "active" | "executing";
+  lastRun?: string;
+  totalRuns: number;
 }
 
-const stepIcons: Record<string, React.ComponentType<{ className?: string }>> = {
-  trigger: Zap,
-  ai: Bot,
-  web: Globe,
-  email: Mail,
-  docs: FileText,
-  database: Database,
-}
+const PRESET_WORKFLOWS: Workflow[] = [
+  {
+    id: "w1",
+    name: "AI Lead Enricher",
+    description: "IMAP Trigger → Apollo Enrichment → GPT Scoring → CRM Push",
+    category: "Sales",
+    status: "idle",
+    totalRuns: 1240,
+    steps: [
+      {
+        id: "s1",
+        type: "trigger",
+        name: "Email Inbound",
+        status: "idle",
+        icon: Mail,
+      },
+      {
+        id: "s2",
+        type: "tool",
+        name: "Apollo.io Lookup",
+        status: "idle",
+        icon: Globe,
+      },
+      { id: "s3", type: "ai", name: "Lead Scoring", status: "idle", icon: Bot },
+      {
+        id: "s4",
+        type: "tool",
+        name: "HubSpot Push",
+        status: "idle",
+        icon: Database,
+      },
+    ],
+  },
+  {
+    id: "w2",
+    name: "Content Repurposer",
+    description: "RSS Feed → AI Synthesis → Multi-Channel Formatting → Slack",
+    category: "Marketing",
+    status: "idle",
+    totalRuns: 890,
+    steps: [
+      {
+        id: "s1",
+        type: "trigger",
+        name: "RSS Trigger",
+        status: "idle",
+        icon: Zap,
+      },
+      {
+        id: "s2",
+        type: "ai",
+        name: "Summarisation",
+        status: "idle",
+        icon: FileText,
+      },
+      {
+        id: "s3",
+        type: "ai",
+        name: "Social Rewrite",
+        status: "idle",
+        icon: Bot,
+      },
+      {
+        id: "s4",
+        type: "tool",
+        name: "Slack Alert",
+        status: "idle",
+        icon: Network,
+      },
+    ],
+  },
+];
 
 export function WorkflowsManager() {
-  const [workflows, setWorkflows] = useState<Workflow[]>([])
-  const [selectedId, setSelectedId] = useState<string | null>(null)
-  const [showCreate, setShowCreate] = useState(false)
-  const [newName, setNewName] = useState('')
-  const [newDesc, setNewDesc] = useState('')
+  const [workflows, setWorkflows] = useState<Workflow[]>(PRESET_WORKFLOWS);
+  const [selectedId, setSelectedId] = useState<string | null>(
+    PRESET_WORKFLOWS[0].id,
+  );
+  const [isExecuting, setIsExecuting] = useState(false);
+  const [activeStep, setActiveStep] = useState<string | null>(null);
 
-  const createWorkflow = () => {
-    if (!newName.trim()) return
-    const wf: Workflow = {
-      id: Date.now().toString(),
-      name: newName,
-      description: newDesc,
-      steps: [
-        { id: '1', type: 'trigger', name: 'Manual Trigger', description: 'Start workflow manually', icon: 'trigger' },
-        { id: '2', type: 'ai', name: 'AI Processing', description: 'Process with AI model', icon: 'ai' },
-      ],
-      runs: [],
-      isRunning: false,
+  const selected = workflows.find((w) => w.id === selectedId);
+
+  const executeWorkflow = async (id: string) => {
+    if (isExecuting) return;
+    setIsExecuting(true);
+
+    const workflow = workflows.find((w) => w.id === id);
+    if (!workflow) return;
+
+    // Simulate Step-by-Step Orchestration
+    for (const step of workflow.steps) {
+      setActiveStep(step.id);
+      setWorkflows((prev) =>
+        prev.map((w) =>
+          w.id === id
+            ? {
+                ...w,
+                status: "executing",
+                steps: w.steps.map((s) =>
+                  s.id === step.id ? { ...s, status: "running" } : s,
+                ),
+              }
+            : w,
+        ),
+      );
+
+      await new Promise((r) => setTimeout(r, 1200)); // Simulation of neural latency
+
+      setWorkflows((prev) =>
+        prev.map((w) =>
+          w.id === id
+            ? {
+                ...w,
+                steps: w.steps.map((s) =>
+                  s.id === step.id ? { ...s, status: "success" } : s,
+                ),
+              }
+            : w,
+        ),
+      );
     }
-    setWorkflows(prev => [...prev, wf])
-    setSelectedId(wf.id)
-    setNewName(''); setNewDesc('')
-    setShowCreate(false)
-  }
 
-  const deleteWorkflow = (id: string) => {
-    setWorkflows(prev => prev.filter(w => w.id !== id))
-    if (selectedId === id) setSelectedId(null)
-  }
-
-  const runWorkflow = async (id: string) => {
-    setWorkflows(prev => prev.map(w => w.id === id ? { ...w, isRunning: true } : w))
-    const run: WorkflowRun = { id: Date.now().toString(), startedAt: new Date().toLocaleTimeString(), status: 'running' }
-    setWorkflows(prev => prev.map(w => w.id === id ? { ...w, runs: [run, ...w.runs] } : w))
-
-    try {
-      const wf = workflows.find(w => w.id === id)!
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messages: [
-            { role: 'system', content: 'You are a workflow automation engine. Execute the workflow and return results.' },
-            { role: 'user', content: `Execute workflow: ${wf.name}. Steps: ${wf.steps.map(s => s.name).join(' → ')}` },
-          ],
-          model: 'llama3',
-        }),
-      })
-      const data = await res.json()
-      setWorkflows(prev => prev.map(w => w.id === id ? {
-        ...w,
-        isRunning: false,
-        runs: w.runs.map(r => r.id === run.id ? { ...r, status: 'completed', output: data.content } : r),
-      } : w))
-    } catch {
-      setWorkflows(prev => prev.map(w => w.id === id ? {
-        ...w,
-        isRunning: false,
-        runs: w.runs.map(r => r.id === run.id ? { ...r, status: 'failed' } : r),
-      } : w))
-    }
-  }
-
-  const selected = workflows.find(w => w.id === selectedId)
+    setWorkflows((prev) =>
+      prev.map((w) =>
+        w.id === id
+          ? {
+              ...w,
+              status: "idle",
+              totalRuns: w.totalRuns + 1,
+              lastRun: new Date().toLocaleTimeString(),
+            }
+          : w,
+      ),
+    );
+    setIsExecuting(false);
+    setActiveStep(null);
+  };
 
   return (
-    <div className="flex h-full flex-col lg:flex-row gap-4">
-      <Card className="lg:w-1/3 flex flex-col overflow-hidden">
-        <div className="p-4 border-b border-border">
-          <div className="flex items-center justify-between">
-            <h3 className="font-semibold">Workflows</h3>
-            <Dialog open={showCreate} onOpenChange={setShowCreate}>
-              <DialogTrigger asChild><Button size="sm" className="gap-2"><Plus className="h-4 w-4" />New</Button></DialogTrigger>
-              <DialogContent>
-                <DialogHeader><DialogTitle>Create Workflow</DialogTitle></DialogHeader>
-                <div className="space-y-4 py-4">
-                  <div className="space-y-2"><Label>Name</Label><Input placeholder="e.g., Email Responder" value={newName} onChange={e => setNewName(e.target.value)} /></div>
-                  <div className="space-y-2"><Label>Description</Label><Textarea placeholder="What does this workflow do?" value={newDesc} onChange={e => setNewDesc(e.target.value)} /></div>
-                  <Button className="w-full" onClick={createWorkflow}>Create</Button>
+    <div className="h-full flex flex-col lg:flex-row gap-6 bg-background">
+      {/* Registry Sidebar */}
+      <Card className="lg:w-[400px] flex flex-col border-2 border-primary/5 rounded-[2rem] shadow-xl overflow-hidden">
+        <div className="p-6 border-b bg-muted/20">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-2xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20 rotate-3">
+                <Workflow
+                  size={20}
+                  className="text-primary-foreground -rotate-3"
+                />
+              </div>
+              <div>
+                <h3 className="font-black text-sm uppercase tracking-tight">
+                  Logic Registry
+                </h3>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <div className="h-1 w-1 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest leading-none">
+                    Dispatcher Active
+                  </span>
                 </div>
-              </DialogContent>
-            </Dialog>
+              </div>
+            </div>
+            <Button
+              size="icon"
+              variant="ghost"
+              className="h-10 w-10 rounded-xl hover:bg-primary/5"
+            >
+              <Plus size={20} />
+            </Button>
+          </div>
+          <div className="relative">
+            <Network className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/40" />
+            <Input
+              placeholder="Search logic signatures..."
+              className="pl-10 h-12 bg-background border-2 focus-visible:ring-primary/20 rounded-xl"
+            />
           </div>
         </div>
+
         <ScrollArea className="flex-1">
-          <div className="p-2 space-y-2">
-            {workflows.length === 0 && (
-              <div className="text-center py-8">
-                <GitBranch className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                <p className="text-sm text-muted-foreground">No workflows yet</p>
-              </div>
-            )}
+          <div className="p-4 space-y-3">
             {workflows.map((wf) => (
-              <Card key={wf.id} className={`p-3 cursor-pointer transition-all ${selectedId === wf.id ? 'ring-2 ring-primary bg-primary/5' : 'hover:bg-secondary/50'}`} onClick={() => setSelectedId(wf.id)}>
-                <div className="flex items-start justify-between">
+              <motion.div
+                key={wf.id}
+                layout
+                onClick={() => !isExecuting && setSelectedId(wf.id)}
+                className={cn(
+                  "p-5 rounded-[1.75rem] border-2 transition-all cursor-pointer group relative",
+                  selectedId === wf.id
+                    ? "bg-primary/5 border-primary shadow-sm"
+                    : "bg-card border-transparent hover:border-primary/20",
+                  isExecuting && selectedId !== wf.id
+                    ? "opacity-40 grayscale"
+                    : "",
+                )}
+              >
+                <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
-                    <h4 className="font-medium text-sm truncate">{wf.name}</h4>
-                    <p className="text-xs text-muted-foreground mt-0.5 truncate">{wf.description}</p>
-                    <div className="flex items-center gap-1 mt-2">
-                      <Badge variant="secondary" className="text-[10px]">{wf.steps.length} steps</Badge>
-                      <Badge variant="outline" className="text-[10px]">{wf.runs.length} runs</Badge>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-primary/60">
+                        {wf.category}
+                      </span>
+                      {wf.status === "executing" && (
+                        <Badge className="h-4 px-1.5 text-[8px] font-black bg-primary animate-pulse">
+                          EXECUTING
+                        </Badge>
+                      )}
+                    </div>
+                    <h4 className="font-black text-sm uppercase tracking-tight truncate">
+                      {wf.name}
+                    </h4>
+                    <p className="text-[11px] font-medium text-muted-foreground mt-1 line-clamp-1">
+                      {wf.description}
+                    </p>
+
+                    <div className="flex items-center gap-4 mt-4">
+                      <div className="flex items-center gap-1.5">
+                        <Activity
+                          size={12}
+                          className="text-muted-foreground/40"
+                        />
+                        <span className="text-[10px] font-bold text-muted-foreground/60">
+                          {wf.totalRuns.toLocaleString()} RUNS
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <Zap size={12} className="text-primary/40" />
+                        <span className="text-[10px] font-bold text-muted-foreground/60">
+                          {wf.steps.length} NODES
+                        </span>
+                      </div>
                     </div>
                   </div>
-                  <div className="flex gap-1 ml-2">
-                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); runWorkflow(wf.id) }} disabled={wf.isRunning}>
-                      {wf.isRunning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={(e) => { e.stopPropagation(); deleteWorkflow(wf.id) }}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
+                  <Button
+                    variant="secondary"
+                    size="icon"
+                    className="rounded-xl h-10 w-10 shadow-sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      executeWorkflow(wf.id);
+                    }}
+                    disabled={isExecuting}
+                  >
+                    <Play size={16} fill="currentColor" />
+                  </Button>
                 </div>
-              </Card>
+              </motion.div>
             ))}
           </div>
         </ScrollArea>
       </Card>
 
-      <div className="flex-1 flex flex-col gap-4">
-        {selected ? (
-          <>
-            <Card className="p-4">
-              <div className="flex items-start justify-between mb-4">
-                <div>
-                  <h3 className="font-semibold">{selected.name}</h3>
-                  <p className="text-sm text-muted-foreground">{selected.description}</p>
-                </div>
-                <Button className="gap-2" onClick={() => runWorkflow(selected.id)} disabled={selected.isRunning}>
-                  {selected.isRunning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
-                  {selected.isRunning ? 'Running...' : 'Run Now'}
-                </Button>
-              </div>
-              <div className="flex items-center gap-2 overflow-x-auto pb-2">
-                {selected.steps.map((step, i) => {
-                  const Icon = stepIcons[step.icon] || Zap
-                  return (
-                    <div key={step.id} className="flex items-center gap-2 shrink-0">
-                      <Card className="p-3 min-w-[120px] bg-secondary/30">
-                        <Icon className="h-5 w-5 text-primary mb-2" />
-                        <p className="text-xs font-medium">{step.name}</p>
-                        <p className="text-[10px] text-muted-foreground">{step.description}</p>
-                      </Card>
-                      {i < selected.steps.length - 1 && <ArrowRight className="h-4 w-4 text-muted-foreground shrink-0" />}
-                    </div>
-                  )
-                })}
-              </div>
-            </Card>
+      {/* Canvas Area */}
+      <div className="flex-1 flex flex-col gap-6 min-w-0">
+        <Card className="flex-1 border-2 border-primary/5 rounded-[2.5rem] shadow-2xl bg-muted/5 relative overflow-hidden flex flex-col">
+          {/* Canvas Grid Background */}
+          <div
+            className="absolute inset-0 opacity-[0.03] pointer-events-none"
+            style={{
+              backgroundImage:
+                "radial-gradient(circle, currentColor 1px, transparent 1px)",
+              backgroundSize: "24px 24px",
+            }}
+          />
 
-            <Card className="flex-1 flex flex-col overflow-hidden">
-              <div className="p-3 border-b border-border"><h4 className="font-semibold">Run History</h4></div>
-              <ScrollArea className="flex-1">
-                <div className="p-3 space-y-3">
-                  {selected.runs.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">No runs yet. Click Run Now to start.</p>}
-                  {selected.runs.map((run) => (
-                    <div key={run.id} className="flex items-start gap-3">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${run.status === 'completed' ? 'bg-green-500/20' : run.status === 'failed' ? 'bg-red-500/20' : 'bg-blue-500/20'}`}>
-                        {run.status === 'completed' ? <CheckCircle2 className="h-4 w-4 text-green-500" /> : run.status === 'failed' ? <Zap className="h-4 w-4 text-red-500" /> : <Loader2 className="h-4 w-4 text-blue-500 animate-spin" />}
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium capitalize">{run.status}</span>
-                          <span className="text-xs text-muted-foreground">{run.startedAt}</span>
+          {selected ? (
+            <>
+              {/* Toolbar */}
+              <div className="px-8 py-6 border-b bg-background/40 backdrop-blur-xl flex items-center justify-between z-20">
+                <div>
+                  <h3 className="text-2xl font-black tracking-tight uppercase leading-none">
+                    {selected.name}
+                  </h3>
+                  <div className="flex items-center gap-2 mt-2">
+                    <Badge variant="outline" className="text-[9px] font-black">
+                      {selected.category}
+                    </Badge>
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                      Modified {selected.lastRun || "Just Now"}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Button
+                    variant="outline"
+                    className="rounded-xl h-11 px-6 font-bold border-2"
+                  >
+                    <Settings2 size={18} className="mr-2" /> Configure
+                  </Button>
+                  <Button
+                    className="rounded-xl h-11 px-8 font-black uppercase tracking-widest shadow-lg shadow-primary/20"
+                    onClick={() => executeWorkflow(selected.id)}
+                    disabled={isExecuting}
+                  >
+                    {isExecuting ? (
+                      <Loader2 size={18} className="mr-2 animate-spin" />
+                    ) : (
+                      <Play size={18} className="mr-2" fill="currentColor" />
+                    )}
+                    {isExecuting ? "Processing" : "Deploy Logic"}
+                  </Button>
+                </div>
+              </div>
+
+              {/* Node Graph */}
+              <div className="flex-1 p-10 flex flex-col items-center justify-center relative">
+                <div className="flex flex-col items-center gap-16 relative z-10 w-full max-w-md">
+                  {selected.steps.map((step, idx) => (
+                    <motion.div
+                      key={step.id}
+                      className="relative w-full"
+                      animate={
+                        activeStep === step.id ? { scale: 1.05 } : { scale: 1 }
+                      }
+                    >
+                      <Card
+                        className={cn(
+                          "p-6 rounded-[2rem] border-2 transition-all flex items-center gap-5 relative z-10",
+                          step.status === "running"
+                            ? "border-primary bg-primary/5 shadow-2xl shadow-primary/10"
+                            : step.status === "success"
+                              ? "border-emerald-500/50 bg-emerald-500/5"
+                              : "bg-card border-primary/5 shadow-xl",
+                        )}
+                      >
+                        <div
+                          className={cn(
+                            "h-14 w-14 rounded-2xl flex items-center justify-center shadow-inner transition-colors",
+                            step.status === "running"
+                              ? "bg-primary text-primary-foreground"
+                              : step.status === "success"
+                                ? "bg-emerald-500 text-white"
+                                : "bg-muted text-muted-foreground",
+                          )}
+                        >
+                          <step.icon size={28} />
                         </div>
-                        {run.output && <p className="text-xs text-muted-foreground mt-1 line-clamp-3">{run.output}</p>}
-                      </div>
-                    </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 mb-1">
+                            {step.type}
+                          </p>
+                          <h5 className="text-lg font-black uppercase tracking-tight truncate">
+                            {step.name}
+                          </h5>
+                        </div>
+                        {step.status === "success" && (
+                          <CheckCircle2
+                            size={24}
+                            className="text-emerald-500 mr-2"
+                          />
+                        )}
+                        {step.status === "running" && (
+                          <Loader2
+                            size={24}
+                            className="text-primary animate-spin mr-2"
+                          />
+                        )}
+                      </Card>
+
+                      {/* Connection Line */}
+                      {idx < selected.steps.length - 1 && (
+                        <div className="absolute left-1/2 top-full h-16 w-0.5 -translate-x-1/2 bg-gradient-to-b from-primary/20 via-primary/5 to-transparent">
+                          <motion.div
+                            initial={{ top: 0 }}
+                            animate={isExecuting ? { top: "100%" } : { top: 0 }}
+                            transition={{ repeat: Infinity, duration: 1.5 }}
+                            className="absolute left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-primary blur-sm"
+                          />
+                        </div>
+                      )}
+                    </motion.div>
                   ))}
                 </div>
-              </ScrollArea>
-            </Card>
-          </>
-        ) : (
-          <Card className="flex-1 flex items-center justify-center">
-            <div className="text-center">
-              <GitBranch className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-              <h3 className="font-semibold mb-1">Select a Workflow</h3>
-              <p className="text-sm text-muted-foreground">Create or select a workflow to view details</p>
+              </div>
+            </>
+          ) : (
+            <div className="flex-1 flex flex-col items-center justify-center space-y-6 opacity-20">
+              <GitBranch size={64} />
+              <div className="text-center space-y-1">
+                <p className="font-black uppercase tracking-[0.3em] text-xs">
+                  Neural Dispatcher Idle
+                </p>
+                <p className="text-sm font-medium">
+                  Select a logic signature from the registry to mount.
+                </p>
+              </div>
             </div>
-          </Card>
-        )}
+          )}
+        </Card>
+
+        {/* Real-time Telemetry */}
+        <Card className="h-[200px] border-2 border-primary/5 rounded-[2rem] shadow-xl overflow-hidden bg-zinc-950 flex flex-col">
+          <div className="px-6 py-3 border-b border-white/5 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Terminal size={14} className="text-emerald-500" />
+              <span className="text-[10px] font-black uppercase tracking-widest text-emerald-500/60">
+                Logic Telemetry
+              </span>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-1.5">
+                <div className="h-1 w-1 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="text-[8px] font-black text-white/40 uppercase">
+                  Sys.OK
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="h-1 w-1 rounded-full bg-blue-500 animate-pulse" />
+                <span className="text-[8px] font-black text-white/40 uppercase">
+                  Net.Link
+                </span>
+              </div>
+            </div>
+          </div>
+          <ScrollArea className="flex-1 font-mono p-4 text-[10px] leading-relaxed">
+            <div className="space-y-1">
+              <p className="text-emerald-500/40">
+                [SYSTEM] Novum Logic Core v4.2 initialising...
+              </p>
+              <p className="text-emerald-500/40">
+                [NETWORK] Established link with global inference relay.
+              </p>
+              {isExecuting && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="space-y-1"
+                >
+                  <p className="text-emerald-500">
+                    [{new Date().toLocaleTimeString()}] Mounting instruction set
+                    for {selected?.name.toUpperCase()}...
+                  </p>
+                  <p className="text-emerald-500">
+                    [{new Date().toLocaleTimeString()}] Executing step:{" "}
+                    {activeStep}...
+                  </p>
+                  <p className="text-blue-400">
+                    [{new Date().toLocaleTimeString()}] API_CALL: routing to
+                    /api/chat...
+                  </p>
+                </motion.div>
+              )}
+              <p className="text-white/20">
+                [{new Date().toLocaleTimeString()}] Awaiting signal...
+              </p>
+            </div>
+          </ScrollArea>
+        </Card>
       </div>
     </div>
-  )
+  );
 }

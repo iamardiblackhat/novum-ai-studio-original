@@ -1,12 +1,32 @@
-'use client'
+"use client";
 
-import { useState, useRef, useEffect } from 'react'
-import { Send, Paperclip, Settings, ChevronDown, Plus, Sparkles, Bot, User, Key, Loader2, X } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Textarea } from '@/components/ui/textarea'
-import { Badge } from '@/components/ui/badge'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { useState, useRef, useEffect, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Send,
+  Paperclip,
+  Settings,
+  ChevronDown,
+  Plus,
+  Sparkles,
+  Bot,
+  User,
+  Key,
+  Loader2,
+  X,
+  Command,
+  Cpu,
+  Zap,
+  FileText,
+  RefreshCw,
+  Maximize2,
+  Mic,
+  MicOff,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,470 +34,623 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+} from "@/components/ui/dropdown-menu";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 
 export interface Model {
-  id: string
-  name: string
-  provider: 'ollama' | 'groq' | 'openrouter' | 'openai' | 'anthropic' | 'local' | 'custom' | 'replicate' | 'huggingface' | 'elevenlabs' | 'suno' | 'runway' | 'stability'
-  badge?: string
-  requiresKey?: boolean
+  id: string;
+  name: string;
+  provider: string;
+  badge?: string;
+  requiresKey?: boolean;
 }
 
 export interface Message {
-  id: string
-  role: 'user' | 'assistant' | 'system'
-  content: string
-  attachments?: { type: 'image' | 'file' | 'audio' | 'video'; url: string; name: string }[]
+  id: string;
+  role: "user" | "assistant" | "system";
+  content: string;
+  attachments?: { type: string; url: string; name: string }[];
   generatedContent?: {
-    type: 'image' | 'video' | 'audio' | 'code'
-    url?: string
-    code?: string
-  }
-  timestamp: Date
-  isLoading?: boolean
+    type: "image" | "video" | "audio" | "code";
+    url?: string;
+    code?: string;
+  };
+  timestamp: Date;
+  isLoading?: boolean;
 }
 
 interface ChatInterfaceProps {
-  models: Model[]
-  defaultModel?: string
-  placeholder?: string
-  systemPrompt?: string
-  showAttachments?: boolean
-  attachmentTypes?: ('image' | 'file' | 'audio' | 'video')[]
-  apiEndpoint?: 'chat' | 'image' | 'audio' | 'music' | 'video'
-  welcomeTitle?: string
-  welcomeDescription?: string
-  suggestedPrompts?: string[]
-  children?: React.ReactNode
-}
-
-const providerLabels: Record<string, string> = {
-  ollama: 'Ollama (Local)',
-  groq: 'Groq',
-  openrouter: 'OpenRouter',
-  openai: 'OpenAI',
-  anthropic: 'Anthropic',
-  local: 'Local Models',
-  custom: 'Custom',
-  replicate: 'Replicate',
-  huggingface: 'Hugging Face',
-  elevenlabs: 'ElevenLabs',
-  suno: 'Suno AI',
-  runway: 'Runway',
-  stability: 'Stability AI',
+  models: Model[];
+  defaultModel?: string;
+  placeholder?: string;
+  systemPrompt?: string;
+  showAttachments?: boolean;
+  attachmentTypes?: string[];
+  apiEndpoint?: "chat" | "image" | "audio" | "music" | "video";
+  welcomeTitle?: string;
+  welcomeDescription?: string;
+  suggestedPrompts?: string[];
+  children?: React.ReactNode;
 }
 
 export function ChatInterface({
   models,
   defaultModel,
-  placeholder = 'Type your message...',
+  placeholder = "Message Novum AI...",
   showAttachments = true,
-  attachmentTypes = ['image', 'file'],
-  apiEndpoint = 'chat',
-  welcomeTitle = 'Start a Conversation',
-  welcomeDescription = 'Describe what you want to create and AI will help you.',
+  attachmentTypes = ["image", "file"],
+  apiEndpoint = "chat",
+  welcomeTitle = "Digital Alchemist",
+  welcomeDescription = "Harness the collective intelligence of the worlds most powerful neural networks.",
   suggestedPrompts = [],
   children,
 }: ChatInterfaceProps) {
-  const [messages, setMessages] = useState<Message[]>([])
-  const [input, setInput] = useState('')
-  const [selectedModel, setSelectedModel] = useState(defaultModel || models[0]?.id || '')
-  const [isLoading, setIsLoading] = useState(false)
-  const [apiKeys, setApiKeys] = useState<Record<string, string>>({})
-  const [showApiKeyDialog, setShowApiKeyDialog] = useState(false)
-  const [pendingAttachments, setPendingAttachments] = useState<File[]>([])
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const scrollRef = useRef<HTMLDivElement>(null)
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [input, setInput] = useState("");
+  const [selectedModel, setSelectedModel] = useState(
+    defaultModel || models[0]?.id || "",
+  );
+  const [isLoading, setIsLoading] = useState(false);
+  const [apiKeys, setApiKeys] = useState<Record<string, string>>({});
+  const [showApiKeyDialog, setShowApiKeyDialog] = useState(false);
+  const [pendingAttachments, setPendingAttachments] = useState<File[]>([]);
+  const [isListening, setIsListening] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const recognitionRef = useRef<any>(null);
 
-  const currentModel = models.find(m => m.id === selectedModel)
-  const providerGroups = models.reduce((acc, model) => {
-    if (!acc[model.provider]) acc[model.provider] = []
-    acc[model.provider].push(model)
-    return acc
-  }, {} as Record<string, Model[]>)
+  const currentModel = models.find((m) => m.id === selectedModel);
+
+  const scrollToBottom = useCallback(() => {
+    if (scrollRef.current) {
+      const scrollContainer = scrollRef.current.querySelector(
+        "[data-radix-scroll-area-viewport]",
+      );
+      if (scrollContainer) {
+        scrollContainer.scrollTo({
+          top: scrollContainer.scrollHeight,
+          behavior: "smooth",
+        });
+      }
+    }
+  }, []);
 
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+    scrollToBottom();
+  }, [messages, isLoading, scrollToBottom]);
+
+  // Speech to Text Logic
+  useEffect(() => {
+    if (
+      typeof window !== "undefined" &&
+      ("SpeechRecognition" in window || "webkitSpeechRecognition" in window)
+    ) {
+      const SpeechRecognition =
+        (window as any).SpeechRecognition ||
+        (window as any).webkitSpeechRecognition;
+      recognitionRef.current = new SpeechRecognition();
+      recognitionRef.current.continuous = true;
+      recognitionRef.current.interimResults = true;
+
+      recognitionRef.current.onresult = (event: any) => {
+        let transcript = "";
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          transcript += event.results[i][0].transcript;
+        }
+        setInput((prev) => prev + transcript);
+      };
+
+      recognitionRef.current.onend = () => {
+        setIsListening(false);
+      };
+
+      recognitionRef.current.onerror = (event: any) => {
+        console.error("Speech recognition error:", event.error);
+        setIsListening(false);
+      };
     }
-  }, [messages])
+  }, []);
+
+  const toggleListening = () => {
+    if (isListening) {
+      recognitionRef.current?.stop();
+      setIsListening(false);
+    } else {
+      try {
+        recognitionRef.current?.start();
+        setIsListening(true);
+      } catch (err) {
+        console.error("Failed to start speech recognition:", err);
+      }
+    }
+  };
 
   const handleSend = async () => {
-    if (!input.trim() && pendingAttachments.length === 0) return
+    if (!input.trim() && pendingAttachments.length === 0) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
-      role: 'user',
+      role: "user",
       content: input,
-      attachments: pendingAttachments.map(f => ({
-        type: f.type.startsWith('image') ? 'image' : f.type.startsWith('audio') ? 'audio' : f.type.startsWith('video') ? 'video' : 'file',
+      attachments: pendingAttachments.map((f) => ({
+        type: f.type,
         url: URL.createObjectURL(f),
         name: f.name,
       })),
       timestamp: new Date(),
-    }
+    };
 
-    setMessages(prev => [...prev, userMessage])
-    const currentInput = input
-    setInput('')
-    setPendingAttachments([])
-    setIsLoading(true)
+    setMessages((prev) => [...prev, userMessage]);
+    const currentInput = input;
+    setInput("");
+    setPendingAttachments([]);
+    setIsLoading(true);
 
     try {
-      let responseContent = ''
-      let generatedContent: Message['generatedContent'] | undefined
+      let responseContent = "";
+      let generatedContent: Message["generatedContent"] | undefined;
 
-      if (apiEndpoint === 'chat') {
-        const res = await fetch('/api/chat', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            messages: [
-              ...messages.map(m => ({ role: m.role, content: m.content })),
-              { role: 'user', content: currentInput },
-            ],
-            model: selectedModel,
-          }),
-        })
-        const data = await res.json()
-        if (data.error) throw new Error(data.error)
-        responseContent = data.content
+      const res = await fetch(`/api/${apiEndpoint}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages:
+            apiEndpoint === "chat"
+              ? [
+                  ...messages.map((m) => ({
+                    role: m.role,
+                    content: m.content,
+                  })),
+                  { role: "user", content: currentInput },
+                ]
+              : undefined,
+          prompt:
+            apiEndpoint !== "chat" && apiEndpoint !== "audio"
+              ? currentInput
+              : undefined,
+          text: apiEndpoint === "audio" ? currentInput : undefined,
+          model: selectedModel,
+        }),
+      });
 
-      } else if (apiEndpoint === 'image') {
-        const res = await fetch('/api/image', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ prompt: currentInput, model: selectedModel }),
-        })
-        const data = await res.json()
-        if (data.error) throw new Error(data.error)
-        responseContent = `Generated image for: "${currentInput}"`
-        generatedContent = { type: 'image', url: data.url }
+      if (!res.ok) throw new Error(`Engine Error (${res.status})`);
 
-      } else if (apiEndpoint === 'audio') {
-        const res = await fetch('/api/audio', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text: currentInput, voice: selectedModel }),
-        })
-        if (!res.ok) throw new Error(`Audio failed (${res.status})`)
-        const blob = await res.blob()
-        const url = URL.createObjectURL(blob)
-        responseContent = `Generated audio for: "${currentInput}"`
-        generatedContent = { type: 'audio', url }
+      if (
+        apiEndpoint === "chat" ||
+        apiEndpoint === "image" ||
+        apiEndpoint === "music" ||
+        apiEndpoint === "video"
+      ) {
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
 
-      } else if (apiEndpoint === 'music') {
-        const res = await fetch('/api/music', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ prompt: currentInput, model: selectedModel }),
-        })
-        const data = await res.json()
-        if (data.error) throw new Error(data.error)
-        responseContent = `Generated music for: "${currentInput}"`
-        generatedContent = { type: 'audio', url: data.url }
-
-      } else if (apiEndpoint === 'video') {
-        const res = await fetch('/api/video', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ prompt: currentInput, model: selectedModel }),
-        })
-        const data = await res.json()
-        if (data.error) throw new Error(data.error)
-        responseContent = `Generated video for: "${currentInput}"`
-        generatedContent = { type: 'video', url: data.url }
+        if (apiEndpoint === "chat") {
+          responseContent = data.content;
+        } else {
+          responseContent = `Generation complete for: "${currentInput}"`;
+          generatedContent = {
+            type: apiEndpoint === "music" ? "audio" : (apiEndpoint as any),
+            url: data.url,
+          };
+        }
+      } else if (apiEndpoint === "audio") {
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        responseContent = `Synthesized audio for: "${currentInput}"`;
+        generatedContent = { type: "audio", url };
       }
 
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: responseContent,
-        generatedContent,
-        timestamp: new Date(),
-      }
-      setMessages(prev => [...prev, assistantMessage])
-
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: (Date.now() + 1).toString(),
+          role: "assistant",
+          content: responseContent,
+          generatedContent,
+          timestamp: new Date(),
+        },
+      ]);
     } catch (err: unknown) {
-      const errorMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: `Error: ${err instanceof Error ? err.message : 'Something went wrong. Make sure Ollama is running.'}`,
-        timestamp: new Date(),
-      }
-      setMessages(prev => [...prev, errorMessage])
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: (Date.now() + 1).toString(),
+          role: "assistant",
+          content: `Synthesis Failure: ${err instanceof Error ? err.message : "Unknown neural anomaly"}`,
+          timestamp: new Date(),
+        },
+      ]);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
-
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      setPendingAttachments(prev => [...prev, ...Array.from(e.target.files!)])
-    }
-  }
-
-  const removeAttachment = (index: number) => {
-    setPendingAttachments(prev => prev.filter((_, i) => i !== index))
-  }
+  };
 
   return (
-    <div className="flex h-full flex-col lg:flex-row gap-4">
-      <div className="flex flex-1 flex-col min-w-0">
-        {/* Model Selector */}
-        <div className="mb-4 flex items-center justify-between gap-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="gap-2">
-                <Bot className="h-4 w-4" />
-                <span className="truncate max-w-[150px]">{currentModel?.name || 'Select Model'}</span>
-                {currentModel?.badge && (
-                  <Badge variant="secondary" className="text-[10px]">{currentModel.badge}</Badge>
-                )}
-                <ChevronDown className="h-4 w-4 ml-1" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-64">
-              {Object.entries(providerGroups).map(([provider, providerModels]) => (
-                <div key={provider}>
-                  <DropdownMenuLabel className="text-xs text-muted-foreground">
-                    {providerLabels[provider] || provider}
-                  </DropdownMenuLabel>
-                  {providerModels.map((model) => (
+    <div className="flex h-full flex-col lg:flex-row gap-6">
+      <div className="flex flex-[1.5] flex-col min-w-0 bg-background/50 rounded-[2rem] border-2 border-primary/5 shadow-2xl shadow-primary/5 overflow-hidden relative">
+        <div className="px-6 py-4 border-b bg-background/80 backdrop-blur-xl flex items-center justify-between z-20">
+          <div className="flex items-center gap-4">
+            <div className="h-10 w-10 rounded-2xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20 rotate-3">
+              <Cpu className="h-5 w-5 text-primary-foreground -rotate-3" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className="flex items-center gap-1.5 hover:opacity-80 transition-opacity">
+                      <span className="font-black tracking-tight text-sm uppercase">
+                        {currentModel?.name || "Select Core"}
+                      </span>
+                      <ChevronDown
+                        size={14}
+                        className="text-muted-foreground"
+                      />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    align="start"
+                    className="w-64 rounded-2xl border-2 p-2"
+                  >
+                    <DropdownMenuLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-2 py-1.5">
+                      Neural Cores
+                    </DropdownMenuLabel>
+                    {models.map((m) => (
+                      <DropdownMenuItem
+                        key={m.id}
+                        onClick={() => setSelectedModel(m.id)}
+                        className="rounded-xl px-3 py-2 flex items-center justify-between group"
+                      >
+                        <div className="flex items-center gap-2">
+                          <Zap
+                            size={14}
+                            className={cn(
+                              "transition-colors",
+                              selectedModel === m.id
+                                ? "text-primary"
+                                : "text-muted-foreground group-hover:text-primary",
+                            )}
+                          />
+                          <span
+                            className={cn(
+                              "text-sm",
+                              selectedModel === m.id
+                                ? "font-bold"
+                                : "font-medium",
+                            )}
+                          >
+                            {m.name}
+                          </span>
+                        </div>
+                        {m.badge && (
+                          <Badge
+                            variant="secondary"
+                            className="text-[9px] font-black uppercase"
+                          >
+                            {m.badge}
+                          </Badge>
+                        )}
+                      </DropdownMenuItem>
+                    ))}
+                    <DropdownMenuSeparator />
                     <DropdownMenuItem
-                      key={model.id}
-                      onClick={() => setSelectedModel(model.id)}
-                      className="flex items-center justify-between"
+                      onClick={() => setShowApiKeyDialog(true)}
+                      className="rounded-xl px-3 py-2"
                     >
-                      <span>{model.name}</span>
-                      {model.badge && (
-                        <Badge variant="secondary" className="text-[10px]">{model.badge}</Badge>
-                      )}
+                      <Key size={14} className="mr-2" />
+                      <span className="text-sm font-medium">
+                        Link API Credentials
+                      </span>
                     </DropdownMenuItem>
-                  ))}
-                  <DropdownMenuSeparator />
-                </div>
-              ))}
-              <DropdownMenuItem onClick={() => setShowApiKeyDialog(true)}>
-                <Key className="h-4 w-4 mr-2" />
-                Configure API Keys
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          <Button variant="ghost" size="sm" onClick={() => setMessages([])}>
-            <Plus className="h-4 w-4 mr-1" />
-            New Chat
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                  Core Synchronised
+                </span>
+              </div>
+            </div>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setMessages([])}
+            className="h-10 w-10 rounded-xl hover:bg-primary/5"
+          >
+            <RefreshCw size={18} className="text-muted-foreground" />
           </Button>
         </div>
 
-        {/* Messages */}
-        <ScrollArea className="flex-1 pr-4" ref={scrollRef}>
-          <div className="space-y-4 pb-4">
-            {messages.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 text-center">
-                <div className="rounded-full bg-primary/10 p-4 mb-4">
-                  <Sparkles className="h-8 w-8 text-primary" />
-                </div>
-                <h3 className="text-lg font-semibold mb-2">{welcomeTitle}</h3>
-                <p className="text-muted-foreground max-w-sm mb-6">{welcomeDescription}</p>
-                {suggestedPrompts.length > 0 && (
-                  <div className="flex flex-wrap justify-center gap-2 max-w-lg">
-                    {suggestedPrompts.map((prompt, i) => (
-                      <Button key={i} variant="outline" size="sm" className="text-xs" onClick={() => setInput(prompt)}>
-                        {prompt}
-                      </Button>
-                    ))}
+        <ScrollArea className="flex-1 px-6" ref={scrollRef}>
+          <div className="max-w-3xl mx-auto py-10 space-y-8">
+            <AnimatePresence mode="popLayout">
+              {messages.length === 0 ? (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="flex flex-col items-center justify-center py-20 text-center space-y-6"
+                >
+                  <div className="relative">
+                    <div className="h-20 w-20 rounded-[2.5rem] bg-primary/10 flex items-center justify-center">
+                      <Sparkles className="h-10 w-10 text-primary animate-pulse" />
+                    </div>
+                    <div className="absolute -top-2 -right-2 h-8 w-8 rounded-full bg-background border-2 border-primary/20 flex items-center justify-center">
+                      <Zap size={14} className="text-primary" />
+                    </div>
                   </div>
-                )}
-              </div>
-            ) : (
-              messages.map((message) => (
-                <div key={message.id} className={`flex gap-3 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                  {message.role === 'assistant' && (
-                    <Avatar className="h-8 w-8 shrink-0">
-                      <AvatarFallback className="bg-primary text-primary-foreground">
-                        <Bot className="h-4 w-4" />
+                  <div className="space-y-2">
+                    <h3 className="text-3xl font-black tracking-tight">
+                      {welcomeTitle}
+                    </h3>
+                    <p className="text-muted-foreground text-sm max-w-sm font-medium">
+                      {welcomeDescription}
+                    </p>
+                  </div>
+                  {suggestedPrompts.length > 0 && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-xl px-4">
+                      {suggestedPrompts.map((prompt, i) => (
+                        <Button
+                          key={i}
+                          variant="outline"
+                          className="h-auto py-3 px-4 justify-start text-left text-xs font-bold rounded-2xl border-2 hover:border-primary/30 hover:bg-primary/5 transition-all group"
+                          onClick={() => setInput(prompt)}
+                        >
+                          <Command
+                            size={14}
+                            className="mr-2 text-muted-foreground group-hover:text-primary transition-colors"
+                          />
+                          <span className="line-clamp-1">{prompt}</span>
+                        </Button>
+                      ))}
+                    </div>
+                  )}
+                </motion.div>
+              ) : (
+                messages.map((message) => (
+                  <motion.div
+                    key={message.id}
+                    initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    className={cn(
+                      "flex gap-4",
+                      message.role === "user" ? "flex-row-reverse" : "flex-row",
+                    )}
+                  >
+                    <Avatar className="h-10 w-10 border-2 border-primary/10 shadow-sm shrink-0 mt-1">
+                      {message.role === "assistant" ? (
+                        <div className="h-full w-full bg-primary flex items-center justify-center">
+                          <Bot size={20} className="text-primary-foreground" />
+                        </div>
+                      ) : (
+                        <AvatarImage src="/placeholder-user.jpg" />
+                      )}
+                      <AvatarFallback className="font-black text-xs">
+                        U
                       </AvatarFallback>
                     </Avatar>
-                  )}
-                  <div className={`max-w-[80%] rounded-2xl px-4 py-3 ${
-                    message.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'
-                  }`}>
-                    {message.attachments && message.attachments.length > 0 && (
-                      <div className="flex flex-wrap gap-2 mb-2">
-                        {message.attachments.map((att, i) => (
-                          <div key={i}>
-                            {att.type === 'image' ? (
-                              <img src={att.url} alt={att.name} className="h-20 w-20 rounded object-cover" />
+                    <div
+                      className={cn(
+                        "space-y-2 max-w-[85%]",
+                        message.role === "user" ? "items-end" : "items-start",
+                      )}
+                    >
+                      <div
+                        className={cn(
+                          "rounded-[1.5rem] px-5 py-4 shadow-sm border-2",
+                          message.role === "user"
+                            ? "bg-primary text-primary-foreground border-primary rounded-tr-none"
+                            : "bg-card text-card-foreground border-primary/5 rounded-tl-none",
+                        )}
+                      >
+                        {message.attachments?.map((att, i) => (
+                          <div
+                            key={i}
+                            className="mb-3 rounded-xl overflow-hidden border shadow-sm"
+                          >
+                            {att.type.startsWith("image") ? (
+                              <img
+                                src={att.url}
+                                className="h-32 w-32 object-cover"
+                              />
                             ) : (
-                              <div className="flex items-center gap-2 bg-background/50 rounded px-2 py-1 text-xs">
-                                <Paperclip className="h-3 w-3" />
-                                {att.name}
+                              <div className="h-20 w-32 bg-muted flex flex-col items-center justify-center">
+                                <FileText size={20} className="text-primary" />
                               </div>
                             )}
                           </div>
                         ))}
+                        <p className="text-sm whitespace-pre-wrap">
+                          {message.content}
+                        </p>
+                        {message.generatedContent && (
+                          <div className="mt-4 rounded-2xl overflow-hidden border-2 border-primary/10 bg-black shadow-2xl relative group/media">
+                            {message.generatedContent.type === "image" && (
+                              <img
+                                src={message.generatedContent.url}
+                                className="w-full h-auto"
+                              />
+                            )}
+                            {(message.generatedContent.type === "audio" ||
+                              message.generatedContent.type === "video") && (
+                              <div className="p-4">
+                                <audio
+                                  controls
+                                  src={message.generatedContent.url}
+                                  className="w-full"
+                                />
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
-                    )}
-                    <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-                    {message.generatedContent && (
-                      <div className="mt-3 rounded-lg overflow-hidden border">
-                        {message.generatedContent.type === 'image' && message.generatedContent.url && (
-                          <img src={message.generatedContent.url} alt="Generated" className="w-full rounded-lg" />
-                        )}
-                        {(message.generatedContent.type === 'audio' || message.generatedContent.type === 'video') && message.generatedContent.url && (
-                          <audio controls src={message.generatedContent.url} className="w-full mt-2" />
-                        )}
-                        {message.generatedContent.type === 'code' && message.generatedContent.code && (
-                          <pre className="p-3 bg-secondary text-xs overflow-auto">
-                            <code>{message.generatedContent.code}</code>
-                          </pre>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                  {message.role === 'user' && (
-                    <Avatar className="h-8 w-8 shrink-0">
-                      <AvatarFallback><User className="h-4 w-4" /></AvatarFallback>
-                    </Avatar>
-                  )}
-                </div>
-              ))
-            )}
+                      <span className="text-[9px] font-black uppercase text-muted-foreground/60 px-2">
+                        {message.timestamp.toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </span>
+                    </div>
+                  </motion.div>
+                ))
+              )}
+            </AnimatePresence>
             {isLoading && (
-              <div className="flex gap-3">
-                <Avatar className="h-8 w-8 shrink-0">
-                  <AvatarFallback className="bg-primary text-primary-foreground">
-                    <Bot className="h-4 w-4" />
-                  </AvatarFallback>
-                </Avatar>
-                <div className="bg-muted rounded-2xl px-4 py-3">
-                  <Loader2 className="h-4 w-4 animate-spin" />
+              <div className="flex gap-4">
+                <div className="h-10 w-10 rounded-[1.25rem] bg-primary flex items-center justify-center shadow-lg shadow-primary/10">
+                  <Bot size={20} className="text-primary-foreground" />
+                </div>
+                <div className="bg-primary/5 border-2 border-primary/10 rounded-[1.5rem] rounded-tl-none px-6 py-4 flex items-center gap-3">
+                  <motion.div
+                    animate={{ scale: [1, 1.5, 1] }}
+                    transition={{ repeat: Infinity, duration: 1 }}
+                    className="h-1.5 w-1.5 rounded-full bg-primary"
+                  />
+                  <span className="text-[10px] font-black uppercase tracking-widest text-primary">
+                    Synthesising...
+                  </span>
                 </div>
               </div>
             )}
           </div>
         </ScrollArea>
 
-        {/* Attachments Preview */}
-        {pendingAttachments.length > 0 && (
-          <div className="flex flex-wrap gap-2 mb-2">
-            {pendingAttachments.map((file, i) => (
-              <div key={i} className="relative group">
-                {file.type.startsWith('image') ? (
-                  <img src={URL.createObjectURL(file)} alt={file.name} className="h-16 w-16 rounded object-cover border" />
-                ) : (
-                  <div className="h-16 px-3 flex items-center gap-2 bg-muted rounded border text-xs">
-                    <Paperclip className="h-4 w-4" />
-                    <span className="truncate max-w-[100px]">{file.name}</span>
-                  </div>
+        <div className="p-6 bg-background/50 backdrop-blur-xl border-t-2 border-primary/5 z-20">
+          <div className="max-w-3xl mx-auto space-y-4">
+            <div className="relative group">
+              <textarea
+                placeholder={placeholder}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSend();
+                  }
+                }}
+                className="w-full min-h-[60px] max-h-[200px] bg-muted/30 hover:bg-muted/50 focus:bg-background border-2 border-transparent focus:border-primary/20 rounded-[1.5rem] px-5 py-4 text-sm font-medium transition-all outline-none resize-none pr-40 shadow-inner"
+              />
+              <div className="absolute right-3 bottom-3 flex items-center gap-1.5">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={toggleListening}
+                  className={cn(
+                    "h-10 w-10 rounded-xl transition-all",
+                    isListening
+                      ? "bg-rose-500 text-white animate-pulse"
+                      : "hover:bg-primary/10 text-muted-foreground",
+                  )}
+                >
+                  {isListening ? <MicOff size={18} /> : <Mic size={18} />}
+                </Button>
+                {showAttachments && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-10 w-10 rounded-xl hover:bg-primary/10"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <Paperclip size={18} />
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={(e) =>
+                        e.target.files &&
+                        setPendingAttachments((prev) => [
+                          ...prev,
+                          ...Array.from(e.target.files!),
+                        ])
+                      }
+                      className="hidden"
+                      multiple
+                    />
+                  </Button>
                 )}
                 <Button
-                  variant="destructive"
                   size="icon"
-                  className="absolute -top-2 -right-2 h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity"
-                  onClick={() => removeAttachment(i)}
+                  disabled={
+                    isLoading ||
+                    (!input.trim() && pendingAttachments.length === 0)
+                  }
+                  onClick={handleSend}
+                  className="h-10 w-10 rounded-xl shadow-lg shadow-primary/20 transition-all active:scale-95"
                 >
-                  <X className="h-3 w-3" />
+                  {isLoading ? (
+                    <Loader2 size={18} className="animate-spin" />
+                  ) : (
+                    <Send size={18} />
+                  )}
                 </Button>
               </div>
-            ))}
-          </div>
-        )}
-
-        {/* Input */}
-        <div className="mt-4 space-y-2">
-          <div className="relative">
-            <Textarea
-              placeholder={placeholder}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault()
-                  handleSend()
-                }
-              }}
-              className="min-h-[100px] resize-none pr-24 bg-background"
-            />
-            <div className="absolute bottom-3 right-3 flex gap-2">
-              {showAttachments && (
-                <>
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    onChange={handleFileSelect}
-                    className="hidden"
-                    multiple
-                    accept={attachmentTypes.map(t => {
-                      if (t === 'image') return 'image/*'
-                      if (t === 'audio') return 'audio/*'
-                      if (t === 'video') return 'video/*'
-                      return '*/*'
-                    }).join(',')}
-                  />
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => fileInputRef.current?.click()}>
-                    <Paperclip className="h-4 w-4" />
-                  </Button>
-                </>
-              )}
-              <Button size="icon" className="h-8 w-8" onClick={handleSend} disabled={isLoading}>
-                <Send className="h-4 w-4" />
-              </Button>
             </div>
           </div>
-          <p className="text-xs text-muted-foreground text-center">Press Enter to send, Shift+Enter for new line</p>
         </div>
       </div>
-
       {children && (
-        <div className="flex-1 min-h-[400px] lg:min-h-0">{children}</div>
+        <div className="flex-1 lg:max-w-md animate-in fade-in slide-in-from-right-4 duration-500">
+          {children}
+        </div>
       )}
-
       <Dialog open={showApiKeyDialog} onOpenChange={setShowApiKeyDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Configure API Keys</DialogTitle>
-            <DialogDescription>
-              Add your API keys to use different model providers. Keys are stored locally in your browser.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            {['openai', 'anthropic', 'groq', 'openrouter', 'replicate', 'huggingface', 'elevenlabs', 'stability'].map((provider) => (
-              <div key={provider} className="space-y-2">
-                <Label htmlFor={`key-${provider}`} className="capitalize">{providerLabels[provider] || provider}</Label>
-                <Input
-                  id={`key-${provider}`}
-                  type="password"
-                  placeholder={`Enter ${provider} API key`}
-                  value={apiKeys[provider] || ''}
-                  onChange={(e) => setApiKeys(prev => ({ ...prev, [provider]: e.target.value }))}
-                />
-              </div>
-            ))}
-            <div className="pt-2">
-              <Label>Ollama URL (Local)</Label>
-              <Input
-                placeholder="http://localhost:11434"
-                value={apiKeys.ollama_url || ''}
-                onChange={(e) => setApiKeys(prev => ({ ...prev, ollama_url: e.target.value }))}
-              />
-              <p className="text-xs text-muted-foreground mt-1">Default: http://localhost:11434</p>
+        <DialogContent className="rounded-[2.5rem] border-2 shadow-2xl p-8 max-w-lg">
+          <DialogHeader className="space-y-4">
+            <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+              <Key size={24} />
             </div>
-          </div>
+            <DialogTitle className="text-2xl font-black tracking-tight uppercase">
+              Neural Keyring
+            </DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="max-h-[400px] mt-6 pr-4">
+            <div className="space-y-5">
+              {[
+                "openai",
+                "anthropic",
+                "groq",
+                "openrouter",
+                "replicate",
+                "elevenlabs",
+                "stability",
+              ].map((provider) => (
+                <div key={provider} className="space-y-2">
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                    {provider} Access Key
+                  </Label>
+                  <Input
+                    type="password"
+                    placeholder="sk-••••••••••••••••"
+                    value={apiKeys[provider] || ""}
+                    onChange={(e) =>
+                      setApiKeys((prev) => ({
+                        ...prev,
+                        [provider]: e.target.value,
+                      }))
+                    }
+                    className="h-12 rounded-xl border-2 focus-visible:ring-primary/20 bg-muted/20"
+                  />
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
+          <Button
+            className="w-full h-12 rounded-2xl font-black uppercase mt-6"
+            onClick={() => setShowApiKeyDialog(false)}
+          >
+            Synchronise
+          </Button>
         </DialogContent>
       </Dialog>
     </div>
-  )
+  );
 }
