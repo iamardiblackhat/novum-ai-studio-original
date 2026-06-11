@@ -1,499 +1,317 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Check, Sparkles, Eye, RotateCcw, Copy, CheckCheck } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { motion } from 'framer-motion'
+import { Palette, Check, RefreshCw, Download, Sun, Moon, Monitor } from 'lucide-react'
 
-interface Theme {
+type ThemeMode = 'dark' | 'light' | 'system'
+
+type Theme = {
   id: string
   name: string
-  style: string
   description: string
-  badge?: string
-  badgeColor?: string
-  bg: string
-  vars: {
-    '--background': string
-    '--foreground': string
-    '--primary': string
-    '--primary-foreground': string
-    '--secondary': string
-    '--secondary-foreground': string
-    '--muted': string
-    '--muted-foreground': string
-    '--accent': string
-    '--accent-foreground': string
-    '--border': string
-    '--card': string
-    '--card-foreground': string
-    '--radius': string
-  }
   preview: {
     bg: string
-    surface: string
-    primary: string
+    sidebar: string
+    card: string
+    accent: string
     text: string
-    muted: string
     border: string
   }
+  vars: Record<string, string>
 }
 
-const themes: Theme[] = [
+const THEMES: Theme[] = [
   {
-    id: 'midnight-ai',
-    name: 'Midnight AI',
-    style: 'Dark',
-    description: 'Deep indigo-black base with violet primary. The go-to for AI tools and developer products in 2026.',
-    badge: 'Default',
-    badgeColor: 'bg-violet-500/20 text-violet-300 border-violet-500/30',
-    bg: 'from-[#0d0d1a] to-[#1a1030]',
+    id: 'midnight',
+    name: 'Midnight',
+    description: 'Deep black with zinc grays — the default dark experience.',
+    preview: { bg: '#09090b', sidebar: '#111113', card: '#18181b', accent: '#7c3aed', text: '#f4f4f5', border: '#27272a' },
     vars: {
-      '--background': '240 15% 7%',
-      '--foreground': '240 10% 96%',
-      '--primary': '263 70% 58%',
-      '--primary-foreground': '0 0% 100%',
-      '--secondary': '240 10% 14%',
-      '--secondary-foreground': '240 10% 80%',
-      '--muted': '240 10% 16%',
-      '--muted-foreground': '240 8% 55%',
-      '--accent': '188 78% 52%',
-      '--accent-foreground': '0 0% 100%',
-      '--border': '240 10% 20%',
-      '--card': '240 12% 10%',
-      '--card-foreground': '240 10% 96%',
-      '--radius': '0.625rem',
+      '--background': '240 10% 3.9%', '--foreground': '0 0% 98%',
+      '--card': '240 10% 3.9%', '--card-foreground': '0 0% 98%',
+      '--primary': '263 70% 58%', '--primary-foreground': '0 0% 98%',
+      '--border': '240 3.7% 15.9%', '--muted': '240 3.7% 15.9%',
+      '--muted-foreground': '240 5% 64.9%', '--accent': '240 3.7% 15.9%',
+      '--sidebar': '240 5.9% 10%',
     },
-    preview: { bg: '#0d0d1a', surface: '#1a1030', primary: '#7c3aed', text: '#e2e2f4', muted: '#555570', border: '#2a2545' },
   },
   {
-    id: 'neobrutalism',
-    name: 'Neobrutalism',
-    style: 'Light',
-    description: 'Thick black borders, primary colour blocks, raw unpolished feel. Dominant UI trend in 2026 indie and startup spaces.',
-    badge: 'Trending',
-    badgeColor: 'bg-yellow-500/20 text-yellow-700 border-yellow-500/30',
-    bg: 'from-yellow-50 to-orange-50',
-    vars: {
-      '--background': '45 100% 96%',
-      '--foreground': '0 0% 5%',
-      '--primary': '24 100% 50%',
-      '--primary-foreground': '0 0% 100%',
-      '--secondary': '45 80% 88%',
-      '--secondary-foreground': '0 0% 5%',
-      '--muted': '45 50% 90%',
-      '--muted-foreground': '0 0% 35%',
-      '--accent': '330 100% 50%',
-      '--accent-foreground': '0 0% 100%',
-      '--border': '0 0% 5%',
-      '--card': '45 100% 98%',
-      '--card-foreground': '0 0% 5%',
-      '--radius': '0px',
-    },
-    preview: { bg: '#fefce8', surface: '#fff7d6', primary: '#f97316', text: '#0d0d0d', muted: '#7a7a7a', border: '#0d0d0d' },
-  },
-  {
-    id: 'glassmorphism',
-    name: 'Glassmorphism',
-    style: 'Dark',
-    description: 'Frosted glass surfaces over vivid gradient mesh backgrounds. Translucent cards, blur effects, vivid highlights.',
-    badge: 'Hot',
-    badgeColor: 'bg-sky-500/20 text-sky-300 border-sky-500/30',
-    bg: 'from-[#0a0a2e] via-[#1a0a3e] to-[#0a1a2e]',
-    vars: {
-      '--background': '235 50% 8%',
-      '--foreground': '210 40% 95%',
-      '--primary': '199 89% 60%',
-      '--primary-foreground': '0 0% 5%',
-      '--secondary': '235 30% 16%',
-      '--secondary-foreground': '210 40% 85%',
-      '--muted': '235 25% 18%',
-      '--muted-foreground': '215 20% 55%',
-      '--accent': '270 70% 65%',
-      '--accent-foreground': '0 0% 100%',
-      '--border': '235 40% 22%',
-      '--card': '235 40% 11%',
-      '--card-foreground': '210 40% 95%',
-      '--radius': '1rem',
-    },
-    preview: { bg: '#070720', surface: '#0f0f35', primary: '#38bdf8', text: '#e8f0fe', muted: '#4a5a7a', border: '#1e2050' },
-  },
-  {
-    id: 'terminal',
-    name: 'Terminal',
-    style: 'Dark',
-    description: 'Classic green-on-black hacker aesthetic. Monospace everywhere, scanline feel, CRT glow on highlights.',
-    badge: null,
-    bg: 'from-[#000a00] to-[#001200]',
-    vars: {
-      '--background': '120 100% 2%',
-      '--foreground': '120 60% 75%',
-      '--primary': '120 70% 45%',
-      '--primary-foreground': '120 100% 3%',
-      '--secondary': '120 40% 8%',
-      '--secondary-foreground': '120 50% 65%',
-      '--muted': '120 30% 10%',
-      '--muted-foreground': '120 30% 40%',
-      '--accent': '120 80% 55%',
-      '--accent-foreground': '120 100% 3%',
-      '--border': '120 40% 16%',
-      '--card': '120 60% 4%',
-      '--card-foreground': '120 60% 75%',
-      '--radius': '0.25rem',
-    },
-    preview: { bg: '#000a00', surface: '#001500', primary: '#22c55e', text: '#86efac', muted: '#2d5a2d', border: '#1a4020' },
-  },
-  {
-    id: 'warm-earth',
-    name: 'Warm Earth',
-    style: 'Light',
-    description: 'Terracotta, sand, and sage. Warm organic palette popular in wellness, sustainability, and lifestyle brands.',
-    badge: null,
-    bg: 'from-[#fdf4e7] to-[#f5e6d0]',
-    vars: {
-      '--background': '36 60% 95%',
-      '--foreground': '25 30% 18%',
-      '--primary': '20 65% 45%',
-      '--primary-foreground': '36 60% 97%',
-      '--secondary': '36 35% 88%',
-      '--secondary-foreground': '25 30% 25%',
-      '--muted': '36 25% 90%',
-      '--muted-foreground': '25 20% 50%',
-      '--accent': '80 35% 45%',
-      '--accent-foreground': '0 0% 100%',
-      '--border': '30 20% 80%',
-      '--card': '36 55% 97%',
-      '--card-foreground': '25 30% 18%',
-      '--radius': '0.75rem',
-    },
-    preview: { bg: '#fdf4e7', surface: '#f5e6d0', primary: '#b45309', text: '#3d2712', muted: '#9e8070', border: '#d4b896' },
-  },
-  {
-    id: 'candy-pop',
-    name: 'Candy Pop',
-    style: 'Light',
-    description: 'Pastel base with neon accents. Playful, bold, maximalist. Works for consumer apps, entertainment, and Gen-Z products.',
-    badge: null,
-    bg: 'from-pink-50 via-purple-50 to-cyan-50',
-    vars: {
-      '--background': '300 30% 97%',
-      '--foreground': '270 40% 20%',
-      '--primary': '320 90% 60%',
-      '--primary-foreground': '0 0% 100%',
-      '--secondary': '280 40% 92%',
-      '--secondary-foreground': '270 40% 25%',
-      '--muted': '290 20% 92%',
-      '--muted-foreground': '270 20% 50%',
-      '--accent': '180 80% 45%',
-      '--accent-foreground': '0 0% 100%',
-      '--border': '290 25% 84%',
-      '--card': '300 25% 99%',
-      '--card-foreground': '270 40% 20%',
-      '--radius': '1.5rem',
-    },
-    preview: { bg: '#fdf0fa', surface: '#f5e6f8', primary: '#ec4899', text: '#3b1a5e', muted: '#a07890', border: '#e8c8e8' },
-  },
-  {
-    id: 'cyberpunk',
-    name: 'Cyberpunk',
-    style: 'Dark',
-    description: 'Neon yellow and magenta on near-black. Glitch-ready aesthetic for gaming, tech, and high-energy brands.',
-    badge: null,
-    bg: 'from-[#0a0014] to-[#140020]',
-    vars: {
-      '--background': '280 100% 4%',
-      '--foreground': '60 100% 85%',
-      '--primary': '60 100% 55%',
-      '--primary-foreground': '280 100% 5%',
-      '--secondary': '280 60% 12%',
-      '--secondary-foreground': '60 80% 75%',
-      '--muted': '280 40% 14%',
-      '--muted-foreground': '280 20% 50%',
-      '--accent': '300 100% 60%',
-      '--accent-foreground': '0 0% 100%',
-      '--border': '280 50% 20%',
-      '--card': '280 70% 7%',
-      '--card-foreground': '60 100% 85%',
-      '--radius': '0.125rem',
-    },
-    preview: { bg: '#0a0014', surface: '#140020', primary: '#facc15', text: '#fef9c3', muted: '#6b4e8a', border: '#2d1050' },
-  },
-  {
-    id: 'minimal-ink',
-    name: 'Minimal Ink',
-    style: 'Light',
-    description: 'Near-black on white, zero decoration. Pure typography hierarchy. Influenced by Linear, Vercel, and Apple design systems.',
-    badge: null,
-    bg: 'from-white to-zinc-50',
-    vars: {
-      '--background': '0 0% 100%',
-      '--foreground': '0 0% 7%',
-      '--primary': '0 0% 9%',
-      '--primary-foreground': '0 0% 98%',
-      '--secondary': '0 0% 96%',
-      '--secondary-foreground': '0 0% 12%',
-      '--muted': '0 0% 96%',
-      '--muted-foreground': '0 0% 45%',
-      '--accent': '0 0% 96%',
-      '--accent-foreground': '0 0% 9%',
-      '--border': '0 0% 90%',
-      '--card': '0 0% 100%',
-      '--card-foreground': '0 0% 7%',
-      '--radius': '0.375rem',
-    },
-    preview: { bg: '#ffffff', surface: '#f9f9f9', primary: '#171717', text: '#111111', muted: '#737373', border: '#e5e5e5' },
-  },
-  {
-    id: 'ocean-depth',
+    id: 'ocean',
     name: 'Ocean Depth',
-    style: 'Dark',
-    description: 'Deep navy to teal gradient system. Cool, trustworthy, modern. Popular in fintech, productivity, and SaaS.',
-    badge: null,
-    bg: 'from-[#020c1b] to-[#0a192f]',
+    description: 'Dark teal-blue tones with cyan accents.',
+    preview: { bg: '#050e18', sidebar: '#071525', card: '#0c1f33', accent: '#06b6d4', text: '#e0f2fe', border: '#0e4166' },
     vars: {
-      '--background': '212 50% 6%',
-      '--foreground': '210 30% 90%',
-      '--primary': '187 80% 50%',
-      '--primary-foreground': '212 50% 5%',
-      '--secondary': '212 35% 13%',
-      '--secondary-foreground': '210 25% 80%',
-      '--muted': '212 28% 15%',
-      '--muted-foreground': '210 18% 48%',
-      '--accent': '215 70% 58%',
-      '--accent-foreground': '0 0% 100%',
-      '--border': '212 30% 20%',
-      '--card': '212 45% 9%',
-      '--card-foreground': '210 30% 90%',
-      '--radius': '0.5rem',
+      '--background': '213 90% 7%', '--foreground': '199 90% 94%',
+      '--card': '213 65% 12%', '--card-foreground': '199 90% 94%',
+      '--primary': '189 94% 43%', '--primary-foreground': '0 0% 100%',
+      '--border': '213 65% 22%', '--muted': '213 50% 16%',
+      '--muted-foreground': '213 30% 55%', '--accent': '213 50% 16%',
+      '--sidebar': '213 80% 9%',
     },
-    preview: { bg: '#020c1b', surface: '#0a192f', primary: '#0dd3d3', text: '#ccd6f6', muted: '#3d5a80', border: '#1d3557' },
   },
   {
-    id: 'bauhaus',
-    name: 'Bauhaus',
-    style: 'Light',
-    description: 'Primary colour geometry. Bold red, blue, and yellow on white. Inspired by Bauhaus and Swiss International design systems.',
-    badge: null,
-    bg: 'from-white to-red-50',
+    id: 'forest',
+    name: 'Dark Forest',
+    description: 'Organic deep greens with emerald highlights.',
+    preview: { bg: '#050f09', sidebar: '#081409', card: '#0d1f10', accent: '#10b981', text: '#d1fae5', border: '#14532d' },
     vars: {
-      '--background': '0 0% 99%',
-      '--foreground': '0 0% 6%',
-      '--primary': '4 90% 52%',
-      '--primary-foreground': '0 0% 100%',
-      '--secondary': '210 90% 92%',
-      '--secondary-foreground': '210 50% 20%',
-      '--muted': '0 0% 94%',
-      '--muted-foreground': '0 0% 40%',
-      '--accent': '45 100% 50%',
-      '--accent-foreground': '0 0% 5%',
-      '--border': '0 0% 86%',
-      '--card': '0 0% 100%',
-      '--card-foreground': '0 0% 6%',
-      '--radius': '0rem',
+      '--background': '140 85% 5%', '--foreground': '140 50% 93%',
+      '--card': '140 60% 9%', '--card-foreground': '140 50% 93%',
+      '--primary': '158 64% 40%', '--primary-foreground': '0 0% 100%',
+      '--border': '140 50% 20%', '--muted': '140 40% 13%',
+      '--muted-foreground': '140 25% 52%', '--accent': '140 40% 13%',
+      '--sidebar': '140 75% 7%',
     },
-    preview: { bg: '#fefefe', surface: '#f8f0f0', primary: '#e63227', text: '#0f0f0f', muted: '#666666', border: '#cccccc' },
+  },
+  {
+    id: 'crimson',
+    name: 'Crimson Night',
+    description: 'Deep dark red with rose and ruby accents.',
+    preview: { bg: '#0f050a', sidebar: '#180810', card: '#1f0d16', accent: '#e11d48', text: '#ffe4e6', border: '#4c0519' },
+    vars: {
+      '--background': '340 90% 5%', '--foreground': '350 80% 94%',
+      '--card': '340 65% 10%', '--card-foreground': '350 80% 94%',
+      '--primary': '346 87% 50%', '--primary-foreground': '0 0% 100%',
+      '--border': '340 65% 22%', '--muted': '340 50% 14%',
+      '--muted-foreground': '340 30% 52%', '--accent': '340 50% 14%',
+      '--sidebar': '340 80% 7%',
+    },
+  },
+  {
+    id: 'amber',
+    name: 'Amber Forge',
+    description: 'Warm dark amber tones with golden glows.',
+    preview: { bg: '#0f0a03', sidebar: '#1a1205', card: '#221808', accent: '#f59e0b', text: '#fef3c7', border: '#451a03' },
+    vars: {
+      '--background': '38 90% 5%', '--foreground': '48 90% 94%',
+      '--card': '38 70% 8%', '--card-foreground': '48 90% 94%',
+      '--primary': '43 96% 56%', '--primary-foreground': '26 83% 14%',
+      '--border': '38 65% 18%', '--muted': '38 50% 12%',
+      '--muted-foreground': '38 30% 50%', '--accent': '38 50% 12%',
+      '--sidebar': '38 80% 6%',
+    },
+  },
+  {
+    id: 'slate',
+    name: 'Slate Minimal',
+    description: 'Clean cool-gray with subtle blue undertones.',
+    preview: { bg: '#0a0c10', sidebar: '#0d1017', card: '#131720', accent: '#6366f1', text: '#e2e8f0', border: '#1e2332' },
+    vars: {
+      '--background': '222 47% 5%', '--foreground': '214 32% 91%',
+      '--card': '222 35% 9%', '--card-foreground': '214 32% 91%',
+      '--primary': '239 84% 67%', '--primary-foreground': '0 0% 100%',
+      '--border': '222 35% 17%', '--muted': '222 30% 14%',
+      '--muted-foreground': '222 20% 52%', '--accent': '222 30% 14%',
+      '--sidebar': '222 45% 7%',
+    },
+  },
+  {
+    id: 'light-clean',
+    name: 'Clean White',
+    description: 'Bright minimal light theme with crisp contrast.',
+    preview: { bg: '#ffffff', sidebar: '#f8fafc', card: '#f1f5f9', accent: '#7c3aed', text: '#0f172a', border: '#e2e8f0' },
+    vars: {
+      '--background': '0 0% 100%', '--foreground': '222 47% 11%',
+      '--card': '0 0% 100%', '--card-foreground': '222 47% 11%',
+      '--primary': '263 70% 50%', '--primary-foreground': '0 0% 100%',
+      '--border': '214 32% 91%', '--muted': '210 40% 96%',
+      '--muted-foreground': '215 16% 47%', '--accent': '210 40% 96%',
+      '--sidebar': '210 40% 98%',
+    },
+  },
+  {
+    id: 'nord',
+    name: 'Nord Aurora',
+    description: 'Inspired by the Nordic aurora — soft blues and polar whites.',
+    preview: { bg: '#2e3440', sidebar: '#272c36', card: '#3b4252', accent: '#88c0d0', text: '#eceff4', border: '#434c5e' },
+    vars: {
+      '--background': '220 17% 22%', '--foreground': '218 27% 94%',
+      '--card': '220 17% 27%', '--card-foreground': '218 27% 94%',
+      '--primary': '193 43% 67%', '--primary-foreground': '220 17% 22%',
+      '--border': '220 17% 36%', '--muted': '220 17% 32%',
+      '--muted-foreground': '220 10% 65%', '--accent': '220 17% 32%',
+      '--sidebar': '220 17% 20%',
+    },
   },
 ]
 
+function applyTheme(theme: Theme) {
+  const root = document.documentElement
+  Object.entries(theme.vars).forEach(([key, value]) => {
+    root.style.setProperty(key, value)
+  })
+  localStorage.setItem('novum-theme', theme.id)
+}
+
 export function ThemesManager() {
-  const [activeTheme, setActiveTheme] = useState('midnight-ai')
-  const [previewTheme, setPreviewTheme] = useState<string | null>(null)
-  const [copied, setCopied] = useState<string | null>(null)
-  const [styleFilter, setStyleFilter] = useState<'All' | 'Dark' | 'Light'>('All')
+  const [active, setActive] = useState<string>('midnight')
+  const [mode, setMode] = useState<ThemeMode>('dark')
+  const [saved, setSaved] = useState<string | null>(null)
 
-  const displayTheme = previewTheme || activeTheme
-  const currentTheme = themes.find(t => t.id === displayTheme) || themes[0]
+  useEffect(() => {
+    const stored = localStorage.getItem('novum-theme')
+    if (stored) setActive(stored)
+  }, [])
 
-  const applyTheme = (theme: Theme) => {
-    const root = document.documentElement
-    Object.entries(theme.vars).forEach(([key, value]) => {
-      root.style.setProperty(key, value)
-    })
-    setActiveTheme(theme.id)
-    setPreviewTheme(null)
+  const handleApply = (theme: Theme) => {
+    setActive(theme.id)
+    applyTheme(theme)
+    setSaved(theme.id)
+    setTimeout(() => setSaved(null), 2000)
   }
 
-  const copyCSS = (theme: Theme) => {
-    const css = Object.entries(theme.vars)
-      .map(([k, v]) => `  ${k}: ${v};`)
-      .join('\n')
-    navigator.clipboard.writeText(`:root {\n${css}\n}`)
-    setCopied(theme.id)
-    setTimeout(() => setCopied(null), 2000)
+  const handleReset = () => {
+    const midnight = THEMES[0]
+    handleApply(midnight)
   }
 
-  const resetToDefault = () => {
-    applyTheme(themes[0])
-  }
-
-  const filtered = themes.filter(t => styleFilter === 'All' || t.style === styleFilter)
+  const activeTheme = THEMES.find(t => t.id === active) || THEMES[0]
 
   return (
-    <div className="flex h-full flex-col gap-4">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+    <div className="h-full overflow-y-auto">
+      <div className="max-w-4xl mx-auto px-4 py-6 space-y-8">
+
+        {/* Header */}
         <div>
-          <h2 className="text-xl font-bold">Themes</h2>
-          <p className="text-sm text-muted-foreground">{themes.length} design systems — click to apply live</p>
+          <div className="flex items-center gap-2 mb-1">
+            <Palette size={15} className="text-violet-400" />
+            <span className="text-xs font-medium text-violet-400 uppercase tracking-widest">Themes Manager</span>
+          </div>
+          <h2 className="text-2xl font-semibold text-zinc-100">Customise Your Studio</h2>
+          <p className="text-sm text-zinc-500 mt-1">Changes apply instantly across the entire app via CSS variables.</p>
         </div>
-        <div className="flex gap-2">
-          <div className="flex gap-1 bg-secondary rounded-lg p-1">
-            {(['All', 'Dark', 'Light'] as const).map(s => (
-              <Button
-                key={s}
-                variant={styleFilter === s ? 'default' : 'ghost'}
-                size="sm"
-                className="h-7 text-xs"
-                onClick={() => setStyleFilter(s)}
-              >{s}</Button>
+
+        {/* Mode Switcher */}
+        <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4">
+          <h3 className="text-sm font-semibold text-zinc-300 mb-3">Appearance Mode</h3>
+          <div className="flex gap-2">
+            {([['dark', <Moon size={14} key="m" />, 'Dark'], ['light', <Sun size={14} key="s" />, 'Light'], ['system', <Monitor size={14} key="mo" />, 'System']] as [ThemeMode, React.ReactNode, string][]).map(([m, icon, label]) => (
+              <button
+                key={m}
+                onClick={() => setMode(m)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border transition-all ${
+                  mode === m
+                    ? 'bg-zinc-700 border-zinc-600 text-zinc-100'
+                    : 'bg-zinc-900 border-zinc-800 text-zinc-500 hover:text-zinc-300'
+                }`}
+              >
+                {icon} {label}
+              </button>
             ))}
           </div>
-          <Button variant="outline" size="sm" className="gap-2" onClick={resetToDefault}>
-            <RotateCcw className="h-3.5 w-3.5" />
-            Reset
-          </Button>
+        </div>
+
+        {/* Active Theme Preview */}
+        <div className="rounded-xl border border-violet-500/30 bg-violet-500/5 p-4">
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <h3 className="text-sm font-semibold text-zinc-200">Active: {activeTheme.name}</h3>
+              <p className="text-xs text-zinc-500">{activeTheme.description}</p>
+            </div>
+            <button
+              onClick={handleReset}
+              className="flex items-center gap-1.5 text-xs text-zinc-500 hover:text-zinc-300 transition-colors"
+            >
+              <RefreshCw size={11} /> Reset
+            </button>
+          </div>
+          <div className="flex gap-2">
+            {Object.entries(activeTheme.preview).slice(0, 5).map(([key, color]) => (
+              <div key={key} className="flex flex-col items-center gap-1">
+                <div className="w-8 h-8 rounded-lg border border-zinc-700/50" style={{ backgroundColor: color }} />
+                <span className="text-[9px] text-zinc-600 capitalize">{key}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Theme Grid */}
+        <div>
+          <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-widest mb-4">Available Themes</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-3">
+            {THEMES.map(theme => (
+              <ThemeCard
+                key={theme.id}
+                theme={theme}
+                isActive={active === theme.id}
+                isSaved={saved === theme.id}
+                onApply={handleApply}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Export */}
+        <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-semibold text-zinc-300">Export Theme</h3>
+              <p className="text-xs text-zinc-600 mt-0.5">Download your current theme as a CSS variables file.</p>
+            </div>
+            <button
+              onClick={() => {
+                const css = `:root {\n${Object.entries(activeTheme.vars).map(([k,v]) => `  ${k}: ${v};`).join('\n')}\n}`
+                const blob = new Blob([css], { type: 'text/css' })
+                const url = URL.createObjectURL(blob)
+                const a = document.createElement('a')
+                a.href = url
+                a.download = `novum-theme-${activeTheme.id}.css`
+                a.click()
+              }}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-zinc-700 bg-zinc-800 hover:bg-zinc-700 text-xs font-medium text-zinc-300 transition-all"
+            >
+              <Download size={12} /> Export CSS
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  )
+}
+
+function ThemeCard({ theme, isActive, isSaved, onApply }: {
+  theme: Theme
+  isActive: boolean
+  isSaved: boolean
+  onApply: (t: Theme) => void
+}) {
+  const p = theme.preview
+  return (
+    <motion.div
+      whileHover={{ scale: 1.01 }}
+      className={`rounded-xl border overflow-hidden transition-all cursor-pointer ${
+        isActive ? 'border-violet-500/50 ring-1 ring-violet-500/20' : 'border-zinc-800 hover:border-zinc-700'
+      }`}
+      onClick={() => onApply(theme)}
+    >
+      {/* Mini preview */}
+      <div className="h-20 relative flex" style={{ backgroundColor: p.bg }}>
+        <div className="w-12 h-full" style={{ backgroundColor: p.sidebar }} />
+        <div className="flex-1 p-2 space-y-1.5">
+          <div className="h-2.5 w-3/4 rounded" style={{ backgroundColor: p.card }} />
+          <div className="h-2 w-1/2 rounded" style={{ backgroundColor: p.border }} />
+          <div className="h-4 w-1/3 rounded-md mt-1" style={{ backgroundColor: p.accent }} />
+        </div>
+        {isActive && (
+          <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-violet-500 flex items-center justify-center">
+            <Check size={10} className="text-white" />
+          </div>
+        )}
+      </div>
+      {/* Info */}
+      <div className="p-3 border-t" style={{ borderColor: p.border, backgroundColor: p.card }}>
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="text-xs font-semibold" style={{ color: p.text }}>{theme.name}</div>
+            <div className="text-[10px] mt-0.5" style={{ color: p.border === '#e2e8f0' ? '#64748b' : '#71717a' }}>{theme.description}</div>
+          </div>
+          {isSaved && (
+            <span className="text-[10px] text-emerald-400 font-medium">Applied ✓</span>
+          )}
         </div>
       </div>
-
-      {/* Live Preview Banner */}
-      <Card className="p-4 border-primary/30 bg-primary/5">
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div
-              className="w-10 h-10 rounded-lg border-2 flex-shrink-0"
-              style={{
-                backgroundColor: currentTheme.preview.primary,
-                borderColor: currentTheme.preview.border,
-              }}
-            />
-            <div>
-              <div className="flex items-center gap-2">
-                <p className="font-semibold text-sm">{currentTheme.name}</p>
-                {previewTheme && (
-                  <Badge variant="outline" className="text-[10px] text-yellow-500 border-yellow-500/40">Previewing</Badge>
-                )}
-                {!previewTheme && (
-                  <Badge variant="outline" className="text-[10px] text-green-500 border-green-500/40">Active</Badge>
-                )}
-              </div>
-              <p className="text-xs text-muted-foreground">{currentTheme.description}</p>
-            </div>
-          </div>
-          <div className="flex gap-2 flex-shrink-0">
-            <Button
-              size="sm"
-              variant="outline"
-              className="gap-1.5"
-              onClick={() => copyCSS(currentTheme)}
-            >
-              {copied === currentTheme.id ? <CheckCheck className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-              Copy CSS
-            </Button>
-            {previewTheme && (
-              <Button size="sm" className="gap-1.5" onClick={() => applyTheme(currentTheme)}>
-                <Check className="h-3.5 w-3.5" />
-                Apply
-              </Button>
-            )}
-          </div>
-        </div>
-      </Card>
-
-      {/* Theme Grid */}
-      <ScrollArea className="flex-1">
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 pr-2">
-          {filtered.map(theme => (
-            <Card
-              key={theme.id}
-              className={`overflow-hidden cursor-pointer transition-all duration-200 group ${
-                activeTheme === theme.id
-                  ? 'ring-2 ring-primary'
-                  : 'hover:ring-1 hover:ring-primary/40'
-              }`}
-              onMouseEnter={() => setPreviewTheme(theme.id)}
-              onMouseLeave={() => setPreviewTheme(null)}
-              onClick={() => applyTheme(theme)}
-            >
-              {/* Visual mockup */}
-              <div className={`h-40 bg-gradient-to-br ${theme.bg} p-3 relative overflow-hidden`}>
-                {/* Mini UI mockup */}
-                <div
-                  className="absolute inset-2 rounded-lg overflow-hidden"
-                  style={{ backgroundColor: theme.preview.bg, border: `1px solid ${theme.preview.border}` }}
-                >
-                  {/* Top bar */}
-                  <div
-                    className="h-7 flex items-center gap-2 px-3 border-b"
-                    style={{ backgroundColor: theme.preview.surface, borderColor: theme.preview.border }}
-                  >
-                    <div className="w-10 h-2 rounded-full" style={{ backgroundColor: theme.preview.primary }} />
-                    <div className="flex-1" />
-                    <div className="w-4 h-2 rounded" style={{ backgroundColor: theme.preview.muted }} />
-                    <div className="w-4 h-2 rounded" style={{ backgroundColor: theme.preview.muted }} />
-                  </div>
-                  <div className="flex gap-2 p-2">
-                    {/* Sidebar */}
-                    <div
-                      className="w-12 rounded"
-                      style={{ backgroundColor: theme.preview.surface, border: `1px solid ${theme.preview.border}` }}
-                    >
-                      {[...Array(4)].map((_, i) => (
-                        <div key={i} className="mx-1 my-1.5 h-1.5 rounded-full"
-                          style={{ backgroundColor: i === 0 ? theme.preview.primary : theme.preview.muted, width: i === 0 ? '80%' : '60%' }}
-                        />
-                      ))}
-                    </div>
-                    {/* Main */}
-                    <div className="flex-1 space-y-1.5">
-                      <div className="h-2 rounded" style={{ backgroundColor: theme.preview.text, width: '60%', opacity: 0.8 }} />
-                      <div className="h-1.5 rounded" style={{ backgroundColor: theme.preview.muted, width: '90%' }} />
-                      <div className="h-1.5 rounded" style={{ backgroundColor: theme.preview.muted, width: '75%' }} />
-                      <div className="mt-2 h-5 rounded flex items-center justify-center" style={{ backgroundColor: theme.preview.primary, width: '40%' }}>
-                        <div className="h-1.5 w-6 rounded" style={{ backgroundColor: theme.preview.bg, opacity: 0.8 }} />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                {activeTheme === theme.id && (
-                  <div className="absolute top-3 right-3 w-6 h-6 rounded-full bg-primary flex items-center justify-center">
-                    <Check className="h-3.5 w-3.5 text-primary-foreground" />
-                  </div>
-                )}
-              </div>
-
-              {/* Info */}
-              <div className="p-3">
-                <div className="flex items-center justify-between mb-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold text-sm">{theme.name}</span>
-                    {theme.badge && (
-                      <span className={`text-[9px] px-1.5 py-0.5 rounded-full border font-medium ${theme.badgeColor}`}>
-                        {theme.badge}
-                      </span>
-                    )}
-                  </div>
-                  <Badge variant="outline" className="text-[10px]">{theme.style}</Badge>
-                </div>
-                <p className="text-[11px] text-muted-foreground leading-relaxed line-clamp-2">{theme.description}</p>
-                {/* Colour swatches */}
-                <div className="flex gap-1.5 mt-3">
-                  {Object.entries(theme.preview).slice(0, 5).map(([key, colour]) => (
-                    <div
-                      key={key}
-                      className="w-5 h-5 rounded-full border border-white/10 flex-shrink-0"
-                      style={{ backgroundColor: colour }}
-                      title={key}
-                    />
-                  ))}
-                </div>
-              </div>
-            </Card>
-          ))}
-        </div>
-      </ScrollArea>
-    </div>
+    </motion.div>
   )
 }

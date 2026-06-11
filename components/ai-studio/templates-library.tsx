@@ -1,439 +1,342 @@
 'use client'
 
 import { useState } from 'react'
-import {
-  Search, Grid3X3, LayoutGrid, Star, ExternalLink,
-  Sparkles, Code2, ShoppingCart, FileText, BarChart3,
-  MessageSquare, Globe, Briefcase, Bot, Mic, Music,
-  Video, Zap, Mail, Database, Layers, Filter
-} from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Input } from '@/components/ui/input'
-import { ScrollArea } from '@/components/ui/scroll-area'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Search, Star, Copy, ExternalLink, Zap, Globe, MessageSquare, Image, Music, Video, Mic, Code, BarChart, Mail, ShoppingCart, BookOpen, Cpu, Filter } from 'lucide-react'
 
-const templates = [
+type Category = 'all' | 'chat' | 'image' | 'video' | 'audio' | 'web' | 'code' | 'business'
+
+type Template = {
+  id: string
+  title: string
+  description: string
+  category: Exclude<Category, 'all'>
+  icon: React.ReactNode
+  tags: string[]
+  prompt: string
+  uses: number
+  featured?: boolean
+}
+
+const TEMPLATES: Template[] = [
+  // Chat
   {
-    id: '1',
-    name: 'AI SaaS Landing',
-    category: 'AI',
-    stack: 'Next.js + Tailwind',
-    description: 'Hero with animated gradient, feature bento grid, pricing table, waitlist CTA. Built for AI tool launches.',
-    gradient: 'from-violet-600/30 via-purple-900/40 to-indigo-900/50',
-    accent: '#7c3aed',
-    tags: ['Bento Grid', 'Waitlist', 'Pricing', 'Dark Mode'],
-    stars: 4.9,
-    uses: 8420,
-    badge: 'Trending',
-    badgeColor: 'bg-violet-500/20 text-violet-300 border-violet-500/30',
-    icon: Sparkles,
-    preview: 'https://ui.shadcn.com',
-    sections: ['Hero', 'Features Bento', 'Testimonials', 'Pricing', 'FAQ', 'CTA', 'Footer'],
+    id: 'c1', title: 'Business Strategy Advisor', category: 'chat',
+    description: 'Get expert-level business strategy advice, market analysis, and growth planning.',
+    icon: <BarChart size={18} />, tags: ['strategy', 'business', 'planning'],
+    prompt: 'You are an elite business strategy consultant with 20 years of experience advising Fortune 500 companies. Provide detailed, actionable strategic advice. Always consider market dynamics, competitive landscape, and execution feasibility.',
+    uses: 4821, featured: true,
   },
   {
-    id: '2',
-    name: 'AI Agent Dashboard',
-    category: 'AI',
-    stack: 'Next.js + shadcn/ui',
-    description: 'Multi-agent management UI. Live activity feed, tool usage metrics, agent health status, task queue.',
-    gradient: 'from-cyan-600/30 via-teal-900/40 to-emerald-900/50',
-    accent: '#0d9488',
-    tags: ['Dashboard', 'Real-time', 'Agents', 'Analytics'],
-    stars: 4.9,
-    uses: 6100,
-    badge: 'Hot',
-    badgeColor: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30',
-    icon: Bot,
-    preview: 'https://ui.shadcn.com',
-    sections: ['Sidebar', 'Agent Cards', 'Activity Log', 'Task Queue', 'Metrics', 'Settings'],
+    id: 'c2', title: 'Code Review Assistant', category: 'chat',
+    description: 'Review code for bugs, security issues, performance, and best practices.',
+    icon: <Code size={18} />, tags: ['code', 'review', 'debugging'],
+    prompt: 'You are a senior software engineer specializing in code review. Analyze code for: 1) Bugs and logic errors, 2) Security vulnerabilities, 3) Performance bottlenecks, 4) Code style and best practices. Provide specific line-by-line feedback with suggestions.',
+    uses: 3620,
   },
   {
-    id: '3',
-    name: 'AI Chatbot UI',
-    category: 'AI',
-    stack: 'Next.js + Vercel AI SDK',
-    description: 'Production-ready chat interface. Streaming responses, multi-model switching, conversation history, RAG toggle.',
-    gradient: 'from-blue-600/30 via-blue-900/40 to-indigo-900/50',
-    accent: '#3b82f6',
-    tags: ['Streaming', 'Multi-model', 'RAG', 'History'],
-    stars: 4.8,
-    uses: 12300,
-    badge: 'Most Used',
-    badgeColor: 'bg-blue-500/20 text-blue-300 border-blue-500/30',
-    icon: MessageSquare,
-    preview: 'https://ui.shadcn.com',
-    sections: ['Chat Window', 'Model Selector', 'Message History', 'File Upload', 'Settings Panel'],
+    id: 'c3', title: 'Email Copywriter', category: 'chat',
+    description: 'Write high-converting email campaigns, cold outreach, and newsletters.',
+    icon: <Mail size={18} />, tags: ['email', 'copywriting', 'marketing'],
+    prompt: 'You are a world-class email copywriter with a track record of 40%+ open rates. Write compelling, personalized emails that drive action. Focus on subject lines, hooks, value propositions, and clear CTAs. Match the tone to the audience.',
+    uses: 2940,
   },
   {
-    id: '4',
-    name: 'Neobrutalist Portfolio',
-    category: 'Portfolio',
-    stack: 'Next.js + Tailwind',
-    description: 'Bold neobrutalist design. Thick borders, clash colours, heavy typography. Cuts through the noise of generic portfolios.',
-    gradient: 'from-yellow-400/30 via-orange-900/40 to-red-900/50',
-    accent: '#f59e0b',
-    tags: ['Neobrutalism', 'Bold', 'Portfolio', 'Animations'],
-    stars: 4.8,
-    uses: 5200,
-    badge: 'Design Award',
-    badgeColor: 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30',
-    icon: Briefcase,
-    preview: 'https://ui.shadcn.com',
-    sections: ['Hero', 'Work Grid', 'About', 'Stack', 'Contact'],
+    id: 'c4', title: 'AI Tutor', category: 'chat',
+    description: 'Learn any subject with a patient, adaptive tutor that meets you at your level.',
+    icon: <BookOpen size={18} />, tags: ['education', 'learning', 'tutoring'],
+    prompt: 'You are a brilliant, patient tutor who can explain any subject from beginner to expert level. Use the Socratic method, real-world examples, and analogies. Always check for understanding before moving on. Adapt your explanation style to the learner.',
+    uses: 5103, featured: true,
+  },
+  // Image
+  {
+    id: 'i1', title: 'Product Photography', category: 'image',
+    description: 'Generate studio-quality product photos on clean, professional backgrounds.',
+    icon: <Image size={18} />, tags: ['product', 'photography', 'commercial'],
+    prompt: 'Professional product photography, studio lighting, white seamless background, high detail, sharp focus, 8K resolution, commercial quality, shot on Hasselblad H6D, soft box lighting, no shadows, product centered, brand identity',
+    uses: 7230, featured: true,
   },
   {
-    id: '5',
-    name: 'SaaS Analytics Dashboard',
-    category: 'Dashboard',
-    stack: 'Next.js + Recharts',
-    description: 'Full analytics suite. Revenue charts, user funnel, cohort retention, churn prediction. Connects to Stripe, Mixpanel, Posthog.',
-    gradient: 'from-green-600/30 via-emerald-900/40 to-teal-900/50',
-    accent: '#10b981',
-    tags: ['Charts', 'Stripe', 'Posthog', 'Dark Mode'],
-    stars: 4.9,
-    uses: 9800,
-    badge: 'Pro',
-    badgeColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
-    icon: BarChart3,
-    preview: 'https://ui.shadcn.com',
-    sections: ['Overview', 'Revenue', 'Users', 'Funnel', 'Retention', 'Reports'],
+    id: 'i2', title: 'Cyberpunk Cityscape', category: 'image',
+    description: 'Neon-drenched futuristic cityscapes with rain, fog, and urban atmosphere.',
+    icon: <Image size={18} />, tags: ['cyberpunk', 'cityscape', 'sci-fi'],
+    prompt: 'Cyberpunk cityscape at night, neon signs reflecting in wet streets, towering skyscrapers, fog and rain, holographic advertisements, flying vehicles, dark moody atmosphere, blade runner aesthetic, ultra detailed, cinematic lighting, 8K',
+    uses: 6112,
   },
   {
-    id: '6',
-    name: 'Voice AI App',
-    category: 'AI',
-    stack: 'Next.js + Vapi + WebRTC',
-    description: 'Real-time voice AI interface. Visualised audio waveform, live transcription, voice cloning selector, call log history.',
-    gradient: 'from-pink-600/30 via-rose-900/40 to-red-900/50',
-    accent: '#ec4899',
-    tags: ['Voice', 'WebRTC', 'Real-time', 'Vapi'],
-    stars: 4.7,
-    uses: 3400,
-    badge: 'New',
-    badgeColor: 'bg-pink-500/20 text-pink-300 border-pink-500/30',
-    icon: Mic,
-    preview: 'https://ui.shadcn.com',
-    sections: ['Voice Interface', 'Waveform', 'Transcript', 'Voice Selector', 'Call History'],
+    id: 'i3', title: 'Portrait Artist', category: 'image',
+    description: 'Stunning portrait photography with professional lighting and composition.',
+    icon: <Image size={18} />, tags: ['portrait', 'photography', 'artistic'],
+    prompt: 'Professional portrait photography, golden hour lighting, bokeh background, sharp eyes in focus, cinematic color grading, editorial quality, shot on Sony A7IV with 85mm f/1.4 lens, natural expression, high fashion aesthetic',
+    uses: 4890,
   },
   {
-    id: '7',
-    name: 'E-commerce + AI Search',
-    category: 'E-commerce',
-    stack: 'Next.js + Shopify + Algolia',
-    description: 'Modern storefront with AI-powered semantic search, personalised recommendations, cart, and one-page checkout.',
-    gradient: 'from-orange-600/30 via-amber-900/40 to-yellow-900/50',
-    accent: '#f97316',
-    tags: ['AI Search', 'Shopify', 'Recommendations', 'Checkout'],
-    stars: 4.8,
-    uses: 7600,
-    badge: 'Popular',
-    badgeColor: 'bg-orange-500/20 text-orange-300 border-orange-500/30',
-    icon: ShoppingCart,
-    preview: 'https://ui.shadcn.com',
-    sections: ['Storefront', 'AI Search', 'Product Page', 'Cart', 'Checkout', 'Order Tracking'],
+    id: 'i4', title: 'Logo Designer', category: 'image',
+    description: 'Clean, minimal, memorable logo concepts for modern brands.',
+    icon: <Image size={18} />, tags: ['logo', 'branding', 'design'],
+    prompt: 'Minimal modern logo design, clean vector style, white background, bold geometric shapes, professional branding, scalable design, no text, striking icon mark, award-winning logo design, flat design, strong visual identity',
+    uses: 3780,
+  },
+  // Video
+  {
+    id: 'v1', title: 'Cinematic Landscape', category: 'video',
+    description: 'Epic cinematic flyover shots of breathtaking natural landscapes.',
+    icon: <Video size={18} />, tags: ['landscape', 'cinematic', 'nature'],
+    prompt: 'Aerial cinematic shot over dramatic mountain landscape at golden hour, sweeping camera movement, volumetric clouds, epic scale, film grain, anamorphic lens flare, National Geographic quality, slow motion',
+    uses: 3201, featured: true,
   },
   {
-    id: '8',
-    name: 'Glassmorphism SaaS',
-    category: 'Landing',
-    stack: 'Next.js + Framer Motion',
-    description: 'Frosted glass UI over animated gradient mesh. Smooth scroll animations, floating feature cards, modal pricing.',
-    gradient: 'from-sky-600/30 via-blue-900/40 to-purple-900/50',
-    accent: '#0ea5e9',
-    tags: ['Glassmorphism', 'Animations', 'Framer Motion', 'Landing'],
-    stars: 4.7,
-    uses: 4900,
-    badge: null,
-    badgeColor: '',
-    icon: Globe,
-    preview: 'https://ui.shadcn.com',
-    sections: ['Hero', 'Features', 'How It Works', 'Pricing', 'Testimonials', 'Footer'],
+    id: 'v2', title: 'Product Showcase', category: 'video',
+    description: 'Sleek product reveal animations with premium feel.',
+    icon: <Video size={18} />, tags: ['product', 'commercial', 'animation'],
+    prompt: 'Luxury product reveal video, dark studio environment, dramatic spotlight, product rotating slowly, light trails and particles, premium feel, Apple-style commercial aesthetic, smooth camera orbit, 4K quality',
+    uses: 2840,
+  },
+  // Audio
+  {
+    id: 'a1', title: 'Podcast Intro Jingle', category: 'audio',
+    description: 'Catchy, professional podcast intro music in any genre.',
+    icon: <Mic size={18} />, tags: ['podcast', 'jingle', 'music'],
+    prompt: 'Upbeat, professional podcast intro music, modern electronic with subtle orchestral elements, builds energy in 15 seconds, clean mix, professional mastering, memorable hook, suitable for tech and business podcast',
+    uses: 4100, featured: true,
   },
   {
-    id: '9',
-    name: 'Docs + Changelog Site',
-    category: 'Docs',
-    stack: 'Next.js + MDX + Contentlayer',
-    description: 'Developer documentation with versioned sidebar, full-text search, API reference, and a public changelog feed.',
-    gradient: 'from-slate-600/30 via-zinc-900/40 to-neutral-900/50',
-    accent: '#64748b',
-    tags: ['MDX', 'Search', 'API Docs', 'Changelog'],
-    stars: 4.8,
-    uses: 5500,
-    badge: null,
-    badgeColor: '',
-    icon: FileText,
-    preview: 'https://ui.shadcn.com',
-    sections: ['Docs Sidebar', 'MDX Pages', 'API Reference', 'Changelog', 'Search'],
+    id: 'a2', title: 'Lo-fi Study Beats', category: 'audio',
+    description: 'Relaxing lo-fi hip hop beats perfect for focus and study sessions.',
+    icon: <Music size={18} />, tags: ['lofi', 'study', 'ambient'],
+    prompt: 'Lo-fi hip hop music, chill relaxing beats, vinyl crackle, soft piano melodies, gentle drums at 85 BPM, warm nostalgic atmosphere, rainy day vibe, perfect for studying and focus, mellow bass, 3 minutes',
+    uses: 6580,
+  },
+  // Web
+  {
+    id: 'w1', title: 'SaaS Landing Page', category: 'web',
+    description: 'High-converting SaaS product landing page with modern design.',
+    icon: <Globe size={18} />, tags: ['saas', 'landing', 'conversion'],
+    prompt: 'Build a modern SaaS landing page with: hero section with headline + CTA, feature grid with icons, social proof section, pricing table with 3 tiers, FAQ accordion, footer. Dark theme, gradient accents, Tailwind CSS, responsive, Next.js.',
+    uses: 5920, featured: true,
   },
   {
-    id: '10',
-    name: 'AI Music Studio UI',
-    category: 'AI',
-    stack: 'Next.js + Wavesurfer.js',
-    description: 'Music generation interface with waveform visualiser, genre/mood selectors, stem separation view, and playlist manager.',
-    gradient: 'from-purple-600/30 via-violet-900/40 to-fuchsia-900/50',
-    accent: '#a855f7',
-    tags: ['Music', 'Waveform', 'Suno', 'Udio'],
-    stars: 4.6,
-    uses: 2800,
-    badge: 'New',
-    badgeColor: 'bg-purple-500/20 text-purple-300 border-purple-500/30',
-    icon: Music,
-    preview: 'https://ui.shadcn.com',
-    sections: ['Generator', 'Waveform', 'Stem View', 'Playlist', 'History'],
+    id: 'w2', title: 'E-commerce Product Page', category: 'web',
+    description: 'Beautiful e-commerce product detail page with cart functionality.',
+    icon: <ShoppingCart size={18} />, tags: ['ecommerce', 'product', 'shop'],
+    prompt: 'Build a premium e-commerce product page: image gallery with zoom, product details, variant selector (size/color), add to cart with animation, reviews section, related products carousel. Clean minimal design, Tailwind, React hooks.',
+    uses: 3450,
+  },
+  // Code
+  {
+    id: 'code1', title: 'REST API Builder', category: 'code',
+    description: 'Generate complete REST API routes with validation and error handling.',
+    icon: <Cpu size={18} />, tags: ['api', 'backend', 'nodejs'],
+    prompt: 'Generate a complete REST API endpoint with: input validation using Zod, proper error handling with typed error responses, authentication middleware check, database query with Prisma, rate limiting, and JSDoc documentation. TypeScript, Express or Next.js API route.',
+    uses: 4200, featured: true,
   },
   {
-    id: '11',
-    name: 'n8n Automation Hub',
-    category: 'Automation',
-    stack: 'Next.js + React Flow',
-    description: 'Visual workflow builder UI. Node-based canvas, pre-built integration blocks, run history, error logs.',
-    gradient: 'from-red-600/30 via-rose-900/40 to-pink-900/50',
-    accent: '#ef4444',
-    tags: ['n8n', 'React Flow', 'Automation', 'Workflows'],
-    stars: 4.9,
-    uses: 6700,
-    badge: 'Trending',
-    badgeColor: 'bg-red-500/20 text-red-300 border-red-500/30',
-    icon: Zap,
-    preview: 'https://ui.shadcn.com',
-    sections: ['Canvas', 'Node Library', 'Run History', 'Error Logs', 'Settings'],
+    id: 'code2', title: 'React Component Generator', category: 'code',
+    description: 'Generate reusable, typed React components with props and tests.',
+    icon: <Code size={18} />, tags: ['react', 'component', 'typescript'],
+    prompt: 'Generate a reusable React component with: full TypeScript props interface, forwardRef support, className merging with cn(), compound component variants, accessibility attributes (aria-*), and a Jest unit test. Follow shadcn/ui patterns.',
+    uses: 5310,
+  },
+  // Business
+  {
+    id: 'b1', title: 'Investor Pitch Deck', category: 'business',
+    description: 'Structure a compelling investor pitch with all key slides.',
+    icon: <BarChart size={18} />, tags: ['pitch', 'investor', 'startup'],
+    prompt: 'Create a compelling investor pitch deck outline: 1) Problem (pain point with data), 2) Solution (product overview), 3) Market size (TAM/SAM/SOM), 4) Business model (revenue streams), 5) Traction (key metrics), 6) Team, 7) Ask (funding amount + use of funds). Make it persuasive and data-driven.',
+    uses: 3890, featured: true,
   },
   {
-    id: '12',
-    name: 'Waitlist + Viral Loop',
-    category: 'Landing',
-    stack: 'Next.js + Supabase',
-    description: 'High-converting waitlist page with referral tracking, position counter, social share cards, and admin dashboard.',
-    gradient: 'from-lime-600/30 via-green-900/40 to-emerald-900/50',
-    accent: '#84cc16',
-    tags: ['Waitlist', 'Referral', 'Supabase', 'Viral'],
-    stars: 4.7,
-    uses: 3900,
-    badge: null,
-    badgeColor: '',
-    icon: Mail,
-    preview: 'https://ui.shadcn.com',
-    sections: ['Hero', 'Waitlist Form', 'Referral Counter', 'Share Cards', 'Admin Panel'],
-  },
-  {
-    id: '13',
-    name: 'Video AI Generator UI',
-    category: 'AI',
-    stack: 'Next.js + Replicate',
-    description: 'Video generation interface supporting LTX-Video, Wan 2.1, HunyuanVideo. Progress tracker, gallery, prompt history.',
-    gradient: 'from-indigo-600/30 via-blue-900/40 to-violet-900/50',
-    accent: '#6366f1',
-    tags: ['Video AI', 'Replicate', 'LTX', 'Wan'],
-    stars: 4.7,
-    uses: 2200,
-    badge: 'New',
-    badgeColor: 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30',
-    icon: Video,
-    preview: 'https://ui.shadcn.com',
-    sections: ['Generator', 'Model Picker', 'Progress', 'Gallery', 'Prompt History'],
-  },
-  {
-    id: '14',
-    name: 'RAG Knowledge Base',
-    category: 'AI',
-    stack: 'Next.js + Qdrant + LangChain',
-    description: 'Upload docs, chunk, embed, and query. Full RAG pipeline UI with source citations, chunk inspector, and embedding visualiser.',
-    gradient: 'from-teal-600/30 via-cyan-900/40 to-sky-900/50',
-    accent: '#14b8a6',
-    tags: ['RAG', 'Qdrant', 'LangChain', 'Embeddings'],
-    stars: 4.8,
-    uses: 4100,
-    badge: 'Developer',
-    badgeColor: 'bg-teal-500/20 text-teal-300 border-teal-500/30',
-    icon: Database,
-    preview: 'https://ui.shadcn.com',
-    sections: ['Upload', 'Chunker', 'Query Interface', 'Citations', 'Chunk Inspector'],
-  },
-  {
-    id: '15',
-    name: 'Terminal / Hacker Blog',
-    category: 'Portfolio',
-    stack: 'Next.js + MDX',
-    description: 'Monospace terminal aesthetic. Green-on-black, command-line navigation, ASCII art header, dev blog with syntax highlighting.',
-    gradient: 'from-green-900/60 via-black to-green-950/80',
-    accent: '#22c55e',
-    tags: ['Terminal', 'Hacker', 'Blog', 'MDX'],
-    stars: 4.6,
-    uses: 3100,
-    badge: null,
-    badgeColor: '',
-    icon: Code2,
-    preview: 'https://ui.shadcn.com',
-    sections: ['ASCII Header', 'Terminal Nav', 'Blog Posts', 'Projects', 'Contact'],
+    id: 'b2', title: 'Social Media Content Calendar', category: 'business',
+    description: 'Plan a month of engaging social media content across platforms.',
+    icon: <MessageSquare size={18} />, tags: ['social', 'content', 'marketing'],
+    prompt: 'Create a 30-day social media content calendar for [brand]. Include: post type (image/video/carousel/story), platform (LinkedIn/Instagram/Twitter/TikTok), topic, hook line, call to action, and best posting time. Mix educational, entertaining, and promotional content at an 80/20 ratio.',
+    uses: 4670,
   },
 ]
 
-const categories = ['All', 'AI', 'Dashboard', 'Landing', 'Portfolio', 'E-commerce', 'Docs', 'Automation']
+const CATEGORIES: { id: Category; label: string; icon: React.ReactNode }[] = [
+  { id: 'all', label: 'All', icon: <Zap size={13} /> },
+  { id: 'chat', label: 'Chat', icon: <MessageSquare size={13} /> },
+  { id: 'image', label: 'Image', icon: <Image size={13} /> },
+  { id: 'video', label: 'Video', icon: <Video size={13} /> },
+  { id: 'audio', label: 'Audio', icon: <Mic size={13} /> },
+  { id: 'web', label: 'Web', icon: <Globe size={13} /> },
+  { id: 'code', label: 'Code', icon: <Code size={13} /> },
+  { id: 'business', label: 'Business', icon: <BarChart size={13} /> },
+]
 
 export function TemplatesLibrary() {
-  const [searchQuery, setSearchQuery] = useState('')
-  const [selectedCategory, setSelectedCategory] = useState('All')
-  const [viewMode, setViewMode] = useState<'grid' | 'large'>('grid')
-  const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [query, setQuery] = useState('')
+  const [category, setCategory] = useState<Category>('all')
+  const [copied, setCopied] = useState<string | null>(null)
+  const [expanded, setExpanded] = useState<string | null>(null)
 
-  const filtered = templates.filter(t =>
-    (selectedCategory === 'All' || t.category === selectedCategory) &&
-    (t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      t.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      t.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase())))
-  )
+  const filtered = TEMPLATES.filter(t => {
+    const matchCat = category === 'all' || t.category === category
+    const q = query.toLowerCase()
+    const matchQ = !q || t.title.toLowerCase().includes(q) || t.description.toLowerCase().includes(q) || t.tags.some(tag => tag.includes(q))
+    return matchCat && matchQ
+  })
+
+  const featured = filtered.filter(t => t.featured)
+  const rest = filtered.filter(t => !t.featured)
+
+  const handleCopy = (t: Template) => {
+    navigator.clipboard.writeText(t.prompt)
+    setCopied(t.id)
+    setTimeout(() => setCopied(null), 2000)
+  }
 
   return (
-    <div className="flex h-full flex-col gap-4">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+    <div className="h-full overflow-y-auto">
+      <div className="max-w-5xl mx-auto px-4 py-6 space-y-6">
+
+        {/* Header */}
         <div>
-          <h2 className="text-xl font-bold">Templates</h2>
-          <p className="text-sm text-muted-foreground">{templates.length} production-ready templates for 2026</p>
-        </div>
-        <div className="flex gap-2">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search templates, tags, stacks..."
-              className="pl-9 w-64 bg-secondary"
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-            />
+          <div className="flex items-center gap-2 mb-1">
+            <BookOpen size={15} className="text-violet-400" />
+            <span className="text-xs font-medium text-violet-400 uppercase tracking-widest">Templates Library</span>
           </div>
-          <Button variant={viewMode === 'grid' ? 'default' : 'ghost'} size="icon" onClick={() => setViewMode('grid')}>
-            <Grid3X3 className="h-4 w-4" />
-          </Button>
-          <Button variant={viewMode === 'large' ? 'default' : 'ghost'} size="icon" onClick={() => setViewMode('large')}>
-            <LayoutGrid className="h-4 w-4" />
-          </Button>
+          <h2 className="text-2xl font-semibold text-zinc-100">Ready-made AI Prompts</h2>
+          <p className="text-sm text-zinc-500 mt-1">Click any template to expand it, then copy the prompt straight into any AI tool.</p>
         </div>
-      </div>
 
-      {/* Category Filter */}
-      <div className="flex gap-2 overflow-x-auto pb-1 flex-shrink-0">
-        {categories.map(cat => (
-          <Button
-            key={cat}
-            variant={selectedCategory === cat ? 'default' : 'outline'}
-            size="sm"
-            className="flex-shrink-0"
-            onClick={() => setSelectedCategory(cat)}
-          >
-            {cat}
-          </Button>
-        ))}
-      </div>
-
-      {/* Grid */}
-      <ScrollArea className="flex-1">
-        <div className={`grid gap-4 pr-2 ${
-          viewMode === 'grid'
-            ? 'grid-cols-1 sm:grid-cols-2 xl:grid-cols-3'
-            : 'grid-cols-1 lg:grid-cols-2'
-        }`}>
-          {filtered.map(template => {
-            const isExpanded = expandedId === template.id
-            return (
-              <Card
-                key={template.id}
-                className="overflow-hidden group cursor-pointer transition-all duration-200 hover:ring-1 hover:ring-primary/50"
-                onClick={() => setExpandedId(isExpanded ? null : template.id)}
-              >
-                {/* Visual Preview */}
-                <div className={`relative ${
-                  viewMode === 'large' ? 'aspect-video' : 'aspect-[16/9]'
-                } bg-gradient-to-br ${template.gradient} flex flex-col items-center justify-center overflow-hidden`}>
-                  {/* Fake browser chrome */}
-                  <div className="absolute inset-2 rounded-lg border border-white/10 bg-black/20 backdrop-blur-sm flex flex-col overflow-hidden">
-                    <div className="flex items-center gap-1.5 px-3 py-2 border-b border-white/10 bg-black/20 flex-shrink-0">
-                      <div className="w-2.5 h-2.5 rounded-full bg-red-500/60" />
-                      <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/60" />
-                      <div className="w-2.5 h-2.5 rounded-full bg-green-500/60" />
-                      <div className="flex-1 mx-2 h-4 rounded bg-white/10 text-[8px] flex items-center px-2 text-white/40 font-mono">
-                        novum.ai/{template.name.toLowerCase().replace(/\s+/g, '-')}
-                      </div>
-                    </div>
-                    <div className="flex-1 flex items-center justify-center">
-                      <template.icon
-                        className="h-10 w-10 opacity-40"
-                        style={{ color: template.accent }}
-                      />
-                    </div>
-                    {/* Section pills */}
-                    <div className="px-2 pb-2 flex flex-wrap gap-1">
-                      {template.sections.slice(0, 4).map(s => (
-                        <span key={s} className="text-[7px] px-1.5 py-0.5 rounded bg-white/10 text-white/50">{s}</span>
-                      ))}
-                      {template.sections.length > 4 && (
-                        <span className="text-[7px] px-1.5 py-0.5 rounded bg-white/10 text-white/50">+{template.sections.length - 4}</span>
-                      )}
-                    </div>
-                  </div>
-                  {/* Hover overlay */}
-                  <div className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                    <Button size="sm" className="gap-1.5" onClick={e => { e.stopPropagation(); window.open(template.preview, '_blank') }}>
-                      <ExternalLink className="h-3.5 w-3.5" />
-                      Preview
-                    </Button>
-                    <Button size="sm" variant="secondary" className="gap-1.5">
-                      <Sparkles className="h-3.5 w-3.5" />
-                      Use Template
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Info */}
-                <div className="p-4">
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className="font-semibold text-sm">{template.name}</h3>
-                        {template.badge && (
-                          <span className={`text-[9px] px-1.5 py-0.5 rounded-full border font-medium ${template.badgeColor}`}>
-                            {template.badge}
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-[10px] text-muted-foreground mt-0.5 font-mono">{template.stack}</p>
-                    </div>
-                    <div className="flex items-center gap-1 text-yellow-400 flex-shrink-0">
-                      <Star className="h-3.5 w-3.5 fill-current" />
-                      <span className="text-xs font-medium">{template.stars}</span>
-                    </div>
-                  </div>
-
-                  {isExpanded && (
-                    <p className="text-xs text-muted-foreground mb-3 leading-relaxed">{template.description}</p>
-                  )}
-
-                  <div className="flex flex-wrap gap-1 mb-3">
-                    {template.tags.map(tag => (
-                      <Badge key={tag} variant="secondary" className="text-[10px] h-5">{tag}</Badge>
-                    ))}
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <span className="text-[11px] text-muted-foreground">
-                      {template.uses.toLocaleString()} uses
-                    </span>
-                    <Badge variant="outline" className="text-[10px]">{template.category}</Badge>
-                  </div>
-                </div>
-              </Card>
-            )
-          })}
+        {/* Search */}
+        <div className="relative">
+          <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-600" />
+          <input
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+            placeholder="Search templates..."
+            className="w-full rounded-xl border border-zinc-800 bg-zinc-900 pl-9 pr-4 py-2.5 text-sm text-zinc-300 placeholder:text-zinc-600 focus:outline-none focus:border-violet-500/50 transition-all"
+          />
         </div>
-        {filtered.length === 0 && (
-          <div className="text-center py-16">
-            <Filter className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
-            <p className="text-muted-foreground">No templates match your search</p>
+
+        {/* Category Filters */}
+        <div className="flex flex-wrap gap-2">
+          {CATEGORIES.map(c => (
+            <button
+              key={c.id}
+              onClick={() => setCategory(c.id)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
+                category === c.id
+                  ? 'bg-violet-600 border-violet-500 text-white'
+                  : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-700 hover:text-zinc-200'
+              }`}
+            >
+              {c.icon} {c.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Featured */}
+        {featured.length > 0 && (
+          <div>
+            <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-widest mb-3 flex items-center gap-1.5">
+              <Star size={12} className="text-amber-400" /> Featured
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {featured.map(t => <TemplateCard key={t.id} t={t} copied={copied} expanded={expanded} onCopy={handleCopy} onExpand={setExpanded} />)}
+            </div>
           </div>
         )}
-      </ScrollArea>
+
+        {/* All Templates */}
+        {rest.length > 0 && (
+          <div>
+            {featured.length > 0 && (
+              <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                <Filter size={12} /> All ({rest.length})
+              </h3>
+            )}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {rest.map(t => <TemplateCard key={t.id} t={t} copied={copied} expanded={expanded} onCopy={handleCopy} onExpand={setExpanded} />)}
+            </div>
+          </div>
+        )}
+
+        {filtered.length === 0 && (
+          <div className="text-center py-16 text-zinc-600">
+            <Search size={32} className="mx-auto mb-3 opacity-40" />
+            <p className="text-sm">No templates match &ldquo;{query}&rdquo;</p>
+          </div>
+        )}
+      </div>
     </div>
+  )
+}
+
+function TemplateCard({
+  t, copied, expanded, onCopy, onExpand,
+}: {
+  t: Template
+  copied: string | null
+  expanded: string | null
+  onCopy: (t: Template) => void
+  onExpand: (id: string | null) => void
+}) {
+  const isExpanded = expanded === t.id
+  return (
+    <motion.div
+      layout
+      className="rounded-xl border border-zinc-800 bg-zinc-900/60 hover:border-zinc-700 transition-all overflow-hidden"
+    >
+      <button
+        onClick={() => onExpand(isExpanded ? null : t.id)}
+        className="w-full text-left p-4"
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-start gap-3">
+            <div className="mt-0.5 w-8 h-8 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center text-violet-400 shrink-0">
+              {t.icon}
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-semibold text-zinc-100">{t.title}</span>
+                {t.featured && <Star size={10} className="text-amber-400 fill-amber-400" />}
+              </div>
+              <p className="text-xs text-zinc-500 mt-0.5 leading-relaxed">{t.description}</p>
+              <div className="flex flex-wrap gap-1 mt-2">
+                {t.tags.map(tag => (
+                  <span key={tag} className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-500 border border-zinc-700">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+          <div className="text-xs text-zinc-600 shrink-0">{(t.uses / 1000).toFixed(1)}k</div>
+        </div>
+      </button>
+
+      <AnimatePresence>
+        {isExpanded && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.25 }}
+          >
+            <div className="border-t border-zinc-800 p-4 space-y-3">
+              <pre className="text-xs text-zinc-400 bg-zinc-950 rounded-lg p-3 whitespace-pre-wrap leading-relaxed font-mono border border-zinc-800">
+                {t.prompt}
+              </pre>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => onCopy(t)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-500 text-xs font-medium text-white transition-all"
+                >
+                  <Copy size={11} />
+                  {copied === t.id ? 'Copied!' : 'Copy Prompt'}
+                </button>
+                <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-zinc-700 bg-zinc-800 hover:bg-zinc-700 text-xs font-medium text-zinc-300 transition-all">
+                  <ExternalLink size={11} /> Use in Chat
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
   )
 }
