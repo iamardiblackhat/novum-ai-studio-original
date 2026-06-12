@@ -1,3 +1,0 @@
-components/ai-studio/music-studio.tsx(3,28): error TS6133: 'useMemo' is declared but its value is never read.
-../../node_modules/.pnpm/recharts@2.15.0_react-dom@19.2.5_react@19.2.5__react@19.2.5/node_modules/recharts/types/chart/generateCategoricalChart.d.ts(2,36): error TS7016: Could not find a declaration file for module 'lodash'. '/Users/aaronaccount/node_modules/.pnpm/lodash@4.18.1/node_modules/lodash/lodash.js' implicitly has an 'any' type.
-  Try `npm i --save-dev @types/lodash` if it exists or add a new declaration (.d.ts) file containing `declare module 'lodash';`
