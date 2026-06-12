@@ -1,20 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import {
-  Layout,
-  Grid,
-  Columns,
-  Layers,
-  Maximize2,
-  Sparkles,
-  Star,
-  Search,
-  Filter,
-  Copy,
-  Check,
-  ExternalLink,
-} from "lucide-react";
+import { Maximize2, Sparkles, Search, Copy, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -91,21 +78,22 @@ export function LayoutsGallery() {
             />
             <Input
               value={query}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                setQuery(e.target.value)
-              }
+              onChange={(e) => setQuery(e.target.value)}
               placeholder="Filter blueprints..."
               className="pl-9 h-9 text-xs border-2"
             />
           </div>
         </div>
 
-        <Tabs value={category} onValueChange={(v) => setCategory(v as any)}>
+        <Tabs
+          value={category}
+          onValueChange={(v) => setCategory(v as LayoutCategory)}
+        >
           <TabsList className="bg-muted/50 border h-9 p-1">
             {["All", "Dashboard", "Landing", "Content", "Creative"].map(
               (cat) => (
                 <TabsTrigger
-                  key={cat}
+                  key={`tab-${cat}`}
                   value={cat}
                   className="text-[10px] font-bold uppercase px-6"
                 >
@@ -153,7 +141,7 @@ export function LayoutsGallery() {
                     setCopied(l.id);
                     setTimeout(() => setCopied(null), 2000);
                   }}
-                  title="Copy code"
+                  aria-label={`Copy ${l.name} code`}
                 >
                   {copied === l.id ? (
                     <Check size={12} className="mr-1.5 text-emerald-500" />
@@ -166,7 +154,7 @@ export function LayoutsGallery() {
                   size="sm"
                   variant="ghost"
                   className="h-8 w-8 p-0"
-                  title="Full screen preview"
+                  aria-label="Full screen preview"
                 >
                   <Maximize2 size={14} />
                 </Button>

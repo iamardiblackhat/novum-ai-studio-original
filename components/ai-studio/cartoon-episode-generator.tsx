@@ -4,48 +4,36 @@ import { useState, useRef } from "react";
 import {
   Play,
   Pause,
-  Plus,
-  Film,
   Download,
-  Trash2,
-  MoreVertical,
-  Layout,
-  Sparkles,
-  User,
   Clapperboard,
   Scissors,
   Save,
-  Upload,
+  User,
+  Layout,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { ChatInterface, Model } from "./chat-interface";
+import { ChatInterface } from "./chat-interface";
 import { cn } from "@/lib/utils";
 
 interface Scene {
   id: string;
   description: string;
   duration: number;
-  status: "idle" | "rendering" | "completed";
+  status: "completed" | "running" | "idle";
   url?: string;
 }
 
-const cartoonModels: Model[] = [
-  {
-    id: "wan",
-    name: "Wan 2.5 (Anime)",
-    provider: "pollinations",
-    badge: "Elite",
-  },
-  {
-    id: "ltx-3",
-    name: "LTX Video (CGI)",
-    provider: "pollinations",
-    badge: "Fast",
-  },
+const cartoonModels = [
+  // Real free Pollinations video models (no key) for animation/cartoon use
+  { id: "seedance-pro", name: "Seedance Pro (Free)", provider: "pollinations", badge: "Free" },
+  { id: "seedance-2.0", name: "Seedance 2.0 (Free)", provider: "pollinations", badge: "Free" },
+  { id: "wan", name: "Wan 2.5 (Free)", provider: "pollinations", badge: "Free" },
+  { id: "wan-pro", name: "Wan Pro (Free)", provider: "pollinations", badge: "Free" },
+  { id: "wan-fast", name: "Wan Fast (Free)", provider: "pollinations", badge: "Fast" },
+  { id: "ltx-2", name: "LTX Video 2 (Free)", provider: "pollinations", badge: "Fast" },
 ];
 
 export function CartoonEpisodeGenerator() {
@@ -55,7 +43,7 @@ export function CartoonEpisodeGenerator() {
       description: "Subject Alpha enters the command hub.",
       duration: 4,
       status: "completed",
-      url: "/placeholder.jpg",
+      url: "",
     },
     {
       id: "s2",
@@ -64,16 +52,16 @@ export function CartoonEpisodeGenerator() {
       status: "idle",
     },
   ]);
-  const [isPlaying, setIsPlaying] = useState(false);
   const [activeSceneId, setActiveSceneId] = useState<string | null>(
     scenes[0].id,
   );
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
 
   const activeScene = scenes.find((s) => s.id === activeSceneId);
 
   const togglePlay = () => {
-    if (!videoRef.current || !activeScene?.url) return;
+    if (!videoRef.current) return;
     if (isPlaying) {
       videoRef.current.pause();
       setIsPlaying(false);
@@ -86,11 +74,29 @@ export function CartoonEpisodeGenerator() {
   return (
     <ChatInterface
       models={cartoonModels}
-      defaultModel="wan"
+      defaultModel="seedance-pro"
       placeholder="Synthesize the narrative sequence..."
       welcomeTitle="Neural Animation Suite"
       welcomeDescription="Script-to-motion architecture for high-fidelity episodic content generation."
       apiEndpoint="video"
+      onResponse={(data) => {
+        if (data.url) {
+          const newScene: Scene = {
+            id: Date.now().toString(),
+            description: data.prompt || "Generated scene",
+            duration: 4,
+            status: "completed",
+            url: data.url,
+          };
+          setScenes((prev) => [...prev, newScene]);
+          setActiveSceneId(newScene.id);
+          setIsPlaying(true);
+          if (videoRef.current) {
+            videoRef.current.src = data.url;
+            videoRef.current.play();
+          }
+        }
+      }}
     >
       <div className="flex flex-col h-full gap-4">
         {/* Monitor */}
@@ -101,8 +107,9 @@ export function CartoonEpisodeGenerator() {
               className="w-full h-full object-cover"
               onEnded={() => setIsPlaying(false)}
               src={activeScene.url}
-              poster="/placeholder.jpg"
-            />
+            >
+              <track kind="captions" src="" label="English" default />
+            </video>
           ) : (
             <div className="h-full w-full flex flex-col items-center justify-center opacity-20">
               <Clapperboard size={48} strokeWidth={1} />
@@ -112,77 +119,70 @@ export function CartoonEpisodeGenerator() {
             </div>
           )}
 
-          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity p-6 flex flex-col justify-end">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <Button
-                  size="icon"
-                  className="h-10 w-10 rounded-full shadow-lg"
-                  onClick={togglePlay}
-                  disabled={!activeScene?.url}
-                  title={isPlaying ? "Pause" : "Play"}
-                >
-                  {isPlaying ? (
-                    <Pause size={20} />
-                  ) : (
-                    <Play size={20} className="ml-0.5" />
-                  )}
-                </Button>
-                <div>
-                  <h4 className="text-white font-bold uppercase text-xs">
-                    Scene {scenes.findIndex((s) => s.id === activeSceneId) + 1}
-                  </h4>
-                  <p className="text-white/60 text-[10px] uppercase font-medium">
-                    {activeScene?.description || "No meta data"}
-                  </p>
-                </div>
-              </div>
+          <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="flex items-center gap-2">
+              <Button
+                size="icon"
+                onClick={togglePlay}
+                className="h-9 w-9 rounded-full"
+                title={isPlaying ? "Pause" : "Play"}
+              >
+                {isPlaying ? (
+                  <Pause size={18} />
+                ) : (
+                  <Play size={18} className="ml-0.5" />
+                )}
+              </Button>
+              <Badge className="bg-black/60 text-white border-white/10 text-[8px] font-bold uppercase">
+                00:0{scenes.indexOf(activeScene!) * 4}:00
+              </Badge>
+            </div>
+            <div className="flex gap-1">
+              <Button
+                variant="secondary"
+                size="icon"
+                className="h-8 w-8 rounded-full"
+                title="Scissors"
+              >
+                <Scissors size={14} />
+              </Button>
+              <Button
+                variant="secondary"
+                size="icon"
+                className="h-8 w-8 rounded-full"
+                title="Download"
+              >
+                <Download size={14} />
+              </Button>
             </div>
           </div>
         </Card>
 
-        {/* Hubs */}
-        <Card className="p-4 border bg-card/50 shadow-sm flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <User size={14} className="text-primary" />
-            <span className="text-[10px] font-bold uppercase tracking-widest">
-              Actor Registry
-            </span>
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-7 text-[9px] font-bold uppercase"
-            title="Import reference"
-          >
-            <Upload size={12} className="mr-1" /> Import Ref
-          </Button>
-        </Card>
-
-        {/* Timeline */}
+        {/* Storyboard */}
         <Card className="flex-1 flex flex-col border bg-card shadow-sm overflow-hidden min-h-[250px]">
           <div className="px-4 py-2 border-b bg-muted/30 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Layout size={14} className="text-primary" />
+              <User size={14} className="text-primary" />
               <span className="text-[10px] font-bold uppercase tracking-widest">
-                Storyboard Timeline
+                Storyboard
               </span>
             </div>
             <Badge
               variant="outline"
               className="text-[8px] font-black uppercase tracking-widest"
             >
-              {scenes.length} BLOCKS
+              {scenes.length} SCENES
             </Badge>
           </div>
           <ScrollArea className="flex-1">
             <div className="p-2 space-y-1">
               {scenes.map((scene, idx) => (
-                <div
+                <button
                   key={scene.id}
+                  type="button"
                   onClick={() => setActiveSceneId(scene.id)}
                   className={cn(
-                    "flex items-center gap-4 p-3 rounded border transition-all cursor-pointer group",
+                    "w-full flex items-center gap-4 p-3 rounded border transition-all cursor-pointer group text-left",
                     activeSceneId === scene.id
                       ? "bg-primary/5 border-primary/20"
                       : "bg-background border-transparent hover:bg-muted/50",
@@ -190,7 +190,7 @@ export function CartoonEpisodeGenerator() {
                 >
                   <div
                     className={cn(
-                      "h-8 w-8 rounded flex items-center justify-center font-bold text-[10px]",
+                      "h-8 w-8 rounded flex items-center justify-center font-bold text-[10px] shrink-0",
                       activeSceneId === scene.id
                         ? "bg-primary text-white"
                         : "bg-muted text-muted-foreground/40",
@@ -199,47 +199,31 @@ export function CartoonEpisodeGenerator() {
                     {idx + 1}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-[11px] font-bold uppercase truncate group-hover:text-primary">
+                    <p className="text-[11px] font-bold uppercase truncate">
                       {scene.description}
                     </p>
-                    <div className="flex items-center gap-2 mt-1">
-                      <Badge className="h-3.5 px-1 text-[7px] font-bold bg-primary/10 text-primary border-0">
-                        {scene.duration}S
-                      </Badge>
-                      <span className="text-[7px] font-bold text-muted-foreground uppercase">
-                        {scene.status}
-                      </span>
-                    </div>
+                    <p className="text-[8px] font-bold text-muted-foreground uppercase mt-0.5">
+                      Duration: {scene.duration}s • Status: {scene.status}
+                    </p>
                   </div>
-                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7"
-                      title="Edit"
-                    >
-                      <Scissors size={12} />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7"
-                      asChild
-                      title="Download"
-                    >
-                      <a href={scene.url} download>
-                        <Download size={12} />
-                      </a>
-                    </Button>
-                  </div>
-                </div>
+                  {scene.status === "completed" && (
+                    <CheckCircle2 size={12} className="text-emerald-500" />
+                  )}
+                </button>
               ))}
             </div>
           </ScrollArea>
 
-          <div className="p-4 border-t bg-muted/10">
+          <div className="p-4 border-t bg-muted/10 flex justify-between gap-2">
             <Button
-              className="w-full h-10 font-bold uppercase text-[10px] shadow-sm"
+              variant="outline"
+              className="flex-1 h-9 text-[10px] font-bold uppercase"
+              title="Add scene"
+            >
+              <Layout size={14} className="mr-2" /> Add Scene
+            </Button>
+            <Button
+              className="flex-1 h-9 text-[10px] font-bold uppercase shadow-sm"
               title="Export episode"
             >
               <Save size={14} className="mr-2" /> Master Export
@@ -248,5 +232,32 @@ export function CartoonEpisodeGenerator() {
         </Card>
       </div>
     </ChatInterface>
+  );
+}
+
+function CheckCircle2({
+  size,
+  className,
+}: {
+  size: number;
+  className?: string;
+}) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <title>Success</title>
+      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+      <polyline points="22 4 12 14.01 9 11.01" />
+    </svg>
   );
 }

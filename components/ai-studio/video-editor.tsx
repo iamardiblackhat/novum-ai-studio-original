@@ -4,20 +4,12 @@ import { useState, useRef } from "react";
 import {
   Play,
   Pause,
-  SkipBack,
-  SkipForward,
-  Volume2,
   Scissors,
-  Download,
   Trash2,
   Film,
   Upload,
   Sparkles,
-  Sliders,
-  History,
-  Maximize2,
   Timer,
-  Square,
   Music4,
   AudioLines,
   Save,
@@ -26,7 +18,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Slider } from "@/components/ui/slider";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
@@ -45,26 +36,34 @@ export function VideoEditor() {
     {
       id: "t1",
       name: "Primary Clip",
-      url: "/placeholder.jpg",
+      url: "",
       duration: 15,
       startTime: 0,
       type: "visual",
     },
     {
       id: "t2",
-      name: "Audio Master",
-      url: "/placeholder.mp3",
+      name: "Ambient Track",
+      url: "",
       duration: 30,
       startTime: 0,
       type: "audio",
     },
   ]);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [isExporting, setIsExporting] = useState(false);
+  const [currentTime] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const togglePlay = () => setIsPlaying(!isPlaying);
+
+  const totalDuration = Math.max(
+    ...tracks.map((t) => t.startTime + t.duration),
+    30,
+  );
+
+  const deleteTrack = (id: string) => {
+    setTracks((prev) => prev.filter((t) => t.id !== id));
+  };
 
   return (
     <div className="h-full flex flex-col gap-4 bg-background">
@@ -72,10 +71,9 @@ export function VideoEditor() {
         {/* Monitor */}
         <div className="flex-[1.5] flex flex-col gap-4 min-w-0">
           <Card className="flex-1 relative rounded border bg-black shadow-sm group overflow-hidden flex items-center justify-center">
-            <video
-              className="max-h-full max-w-full object-contain"
-              poster="/placeholder.jpg"
-            />
+            <video className="max-h-full max-w-full object-contain">
+              <track kind="captions" src="" label="English" default />
+            </video>
 
             <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -83,7 +81,7 @@ export function VideoEditor() {
                   size="icon"
                   onClick={togglePlay}
                   className="h-10 w-10 rounded-full shadow-lg"
-                  title={isPlaying ? "Pause" : "Play"}
+                  aria-label={isPlaying ? "Pause" : "Play"}
                 >
                   {isPlaying ? (
                     <Pause size={20} />
@@ -92,7 +90,8 @@ export function VideoEditor() {
                   )}
                 </Button>
                 <div className="text-white font-bold uppercase text-[10px] tracking-widest">
-                  00:00:{currentTime.toFixed(0).padStart(2, "0")} / 00:00:30
+                  00:00:{currentTime.toFixed(0).padStart(2, "0")} / 00:00:
+                  {totalDuration.toFixed(0).padStart(2, "0")}
                 </div>
               </div>
               <Badge className="bg-primary text-primary-foreground font-black text-[8px] uppercase">
@@ -112,7 +111,7 @@ export function VideoEditor() {
               size="sm"
               className="h-8 text-[9px] font-bold uppercase"
               onClick={() => fileInputRef.current?.click()}
-              title="Upload media"
+              aria-label="Upload media"
             >
               <Upload size={12} className="mr-1.5" /> Media
               <input
@@ -126,7 +125,7 @@ export function VideoEditor() {
               variant="outline"
               size="sm"
               className="h-8 text-[9px] font-bold uppercase"
-              title="Import from cloud"
+              aria-label="Import from cloud"
             >
               <PlusCircle size={12} className="mr-1.5" /> Library
             </Button>
@@ -146,7 +145,10 @@ export function VideoEditor() {
               placeholder="Apply beat-sync, color grade, or subtitles..."
               className="min-h-[80px] text-xs font-medium border-2"
             />
-            <Button className="w-full h-10 font-bold uppercase text-[10px]">
+            <Button
+              className="w-full h-10 font-bold uppercase text-[10px]"
+              aria-label="Align and render"
+            >
               Align & Render
             </Button>
           </Card>
@@ -187,7 +189,7 @@ export function VideoEditor() {
                         variant="ghost"
                         size="icon"
                         className="h-7 w-7"
-                        title="Split"
+                        aria-label="Split track"
                       >
                         <Scissors size={12} />
                       </Button>
@@ -195,7 +197,8 @@ export function VideoEditor() {
                         variant="ghost"
                         size="icon"
                         className="h-7 w-7 text-rose-500"
-                        title="Delete"
+                        onClick={() => deleteTrack(t.id)}
+                        aria-label="Delete track"
                       >
                         <Trash2 size={12} />
                       </Button>
@@ -220,7 +223,7 @@ export function VideoEditor() {
           <Button
             size="sm"
             className="h-8 font-bold uppercase text-[9px] px-6"
-            title="Export production"
+            aria-label="Export production"
           >
             <Save size={12} className="mr-2" /> Master & Export
           </Button>
@@ -229,7 +232,7 @@ export function VideoEditor() {
         <div className="flex-1 relative overflow-hidden flex flex-col bg-muted/5">
           <div className="h-6 border-b bg-muted/5 flex items-end px-4 gap-20">
             {[0, 5, 10, 15, 20, 25, 30].map((s) => (
-              <div key={s} className="flex flex-col items-start pb-1">
+              <div key={`tick-${s}`} className="flex flex-col items-start pb-1">
                 <div className="h-1.5 w-px bg-border" />
                 <span className="text-[7px] font-bold opacity-30">{s}S</span>
               </div>
@@ -248,7 +251,7 @@ export function VideoEditor() {
 
               {tracks.map((t) => (
                 <div
-                  key={t.id}
+                  key={`timeline-${t.id}`}
                   className="h-10 bg-muted/20 rounded border flex items-center px-4 relative"
                 >
                   <div

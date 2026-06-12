@@ -2,13 +2,11 @@
 
 import { useState } from "react";
 import {
-  Play,
   Download,
-  Trash2,
-  Film,
   Sparkles,
-  Zap,
+  Trash2,
   History,
+  ImageIcon,
   MonitorPlay,
   ListVideo,
 } from "lucide-react";
@@ -29,20 +27,16 @@ interface GeneratedVideo {
 }
 
 const videoModels: Model[] = [
-  {
-    id: "wan",
-    name: "Wan 2.5 (High-Fi)",
-    provider: "pollinations",
-    badge: "Elite",
-  },
-  { id: "ltx-3", name: "LTX Video 3", provider: "pollinations", badge: "Fast" },
-  {
-    id: "runway/gen-4",
-    name: "Runway Gen-4",
-    provider: "openrouter",
-    badge: "Pro",
-    requiresKey: true,
-  },
+  // Pollinations free video (no key, real endpoints when available)
+  { id: "seedance-pro", name: "Seedance Pro (Free)", provider: "pollinations", badge: "Free" },
+  { id: "seedance-2.0", name: "Seedance 2.0 (Free)", provider: "pollinations", badge: "Free" },
+  { id: "wan", name: "Wan 2.5 (Free)", provider: "pollinations", badge: "Free" },
+  { id: "wan-pro", name: "Wan Pro (Free)", provider: "pollinations", badge: "Free" },
+  { id: "wan-fast", name: "Wan Fast (Free)", provider: "pollinations", badge: "Fast" },
+  { id: "ltx-2", name: "LTX Video 2 (Free)", provider: "pollinations", badge: "Free" },
+  // Paid via key
+  { id: "runway/gen-4", name: "Runway Gen-4", provider: "openrouter", badge: "PRO", requiresKey: true },
+  { id: "replicate/wan", name: "Replicate Wan (Free Credits)", provider: "replicate", badge: "Key", requiresKey: true },
 ];
 
 export function VideoGenerator() {
@@ -55,18 +49,34 @@ export function VideoGenerator() {
   return (
     <ChatInterface
       models={videoModels}
-      defaultModel="wan"
+      defaultModel="seedance-pro"
       placeholder="Describe the cinematic sequence..."
       welcomeTitle="Temporal Motion Engine"
       welcomeDescription="Production-grade video synthesis using next-gen temporal diffusers."
       showAttachments={false}
       apiEndpoint="video"
+      onResponse={(data) => {
+        if (data.url) {
+          const validUrl: string = data.url;
+          setVideos((prev) => [
+            {
+              id: Date.now().toString(),
+              url: validUrl,
+              prompt: data.prompt || "Generated sequence",
+              model: data.modelUsed || "pollinations-video",
+              duration: typeof data.duration === "number" ? data.duration : 4,
+              timestamp: new Date(),
+            },
+            ...prev,
+          ]);
+        }
+      }}
     >
       <Card className="flex flex-col h-full bg-background border rounded-lg overflow-hidden shadow-sm">
         <div className="px-4 py-2 border-b bg-muted/30 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="h-7 w-7 rounded bg-primary/10 flex items-center justify-center text-primary border">
-              <Film size={14} />
+              <ImageIcon size={14} />
             </div>
             <div className="flex items-center gap-1 bg-background border rounded p-0.5">
               <Button
@@ -74,7 +84,7 @@ export function VideoGenerator() {
                 size="icon"
                 className="h-7 w-7"
                 onClick={() => setViewMode("grid")}
-                title="Grid view"
+                aria-label="Grid view"
               >
                 <ListVideo size={14} />
               </Button>
@@ -83,7 +93,7 @@ export function VideoGenerator() {
                 size="icon"
                 className="h-7 w-7"
                 onClick={() => setViewMode("reel")}
-                title="Reel view"
+                aria-label="Reel view"
               >
                 <MonitorPlay size={14} />
               </Button>
@@ -123,8 +133,9 @@ export function VideoGenerator() {
                     src={video.url}
                     controls
                     className="w-full h-full object-cover"
-                    poster="/placeholder.jpg"
-                  />
+                  >
+                    <track kind="captions" src="" label="English" default />
+                  </video>
                   <div className="absolute top-2 left-2 right-2 flex items-center justify-between pointer-events-none transition-opacity group-hover:opacity-0">
                     <Badge className="bg-black/60 text-white border-white/10 text-[8px] font-bold uppercase">
                       {video.duration}S RENDER
@@ -143,7 +154,7 @@ export function VideoGenerator() {
                         variant="secondary"
                         className="h-7 w-7"
                         asChild
-                        title="Download"
+                        aria-label="Download video"
                       >
                         <a href={video.url} download>
                           <Download size={14} />
@@ -154,7 +165,7 @@ export function VideoGenerator() {
                         variant="secondary"
                         className="h-7 w-7 text-rose-500"
                         onClick={() => deleteVideo(video.id)}
-                        title="Delete"
+                        aria-label="Delete video"
                       >
                         <Trash2 size={14} />
                       </Button>

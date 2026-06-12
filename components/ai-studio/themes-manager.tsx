@@ -1,19 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import {
-  Palette,
-  Check,
-  RefreshCw,
-  Download,
-  Sparkles,
-  Layout,
-  Type,
-  Box,
-} from "lucide-react";
+import { Check, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 
@@ -71,24 +61,21 @@ const THEMES: Theme[] = [
       "--background": "240 10% 3.9%",
       "--foreground": "0 0% 98%",
       "--primary": "263 70% 50%",
-      "--sidebar": "240 5.9% 10%",
     },
   },
 ];
 
 function applyTheme(theme: Theme) {
   const root = document.documentElement;
-  Object.entries(theme.vars).forEach(([key, value]) =>
-    root.style.setProperty(key, value),
-  );
+  Object.entries(theme.vars).forEach(([key, value]) => {
+    root.style.setProperty(key, value);
+  });
   localStorage.setItem("studio-theme", theme.id);
 }
 
 export function ThemesManager() {
-  const [active, setActive] = useState<string>("studio-light");
-  const [category, setCategory] = useState<
-    "All" | "Modern" | "Retro" | "Playful" | "Artistic"
-  >("All");
+  const [active, setActive] = useState<string>("studio-dark"); // Much darker default for the entire studio (sinister, low-light, production dark aesthetic for the whole project cover)
+  const [category, setCategory] = useState<"All" | "Modern" | "Retro" | "Playful" | "Artistic">("All");
 
   useEffect(() => {
     const stored = localStorage.getItem("studio-theme");
@@ -104,9 +91,9 @@ export function ThemesManager() {
     category === "All" ? THEMES : THEMES.filter((t) => t.category === category);
 
   return (
-    <div className="h-full bg-background overflow-y-auto">
-      <div className="max-w-6xl mx-auto px-6 py-8 space-y-8">
-        <div className="p-6 rounded-lg border bg-muted/30 flex flex-col md:flex-row md:items-center justify-between gap-6">
+  <div className="h-full bg-background overflow-y-auto">
+    <div className="max-w-6xl mx-auto px-6 py-8 space-y-8">
+      <div className="p-6 rounded-lg border bg-muted/30 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-1">
             <h2 className="text-xl font-bold uppercase tracking-tight">
               Studio Aesthetics
@@ -115,11 +102,18 @@ export function ThemesManager() {
               Global CSS Variable Architecture
             </p>
           </div>
-          <Tabs value={category} onValueChange={(v) => setCategory(v as any)}>
+          <Tabs
+            value={category}
+            onValueChange={(v) =>
+              setCategory(
+                v as "All" | "Modern" | "Retro" | "Playful" | "Artistic",
+              )
+            }
+          >
             <TabsList className="bg-background border h-9">
               {["All", "Modern", "Retro", "Playful", "Artistic"].map((cat) => (
                 <TabsTrigger
-                  key={cat}
+                  key={`cat-${cat}`}
                   value={cat}
                   className="text-[10px] font-bold uppercase px-4"
                 >
@@ -132,15 +126,17 @@ export function ThemesManager() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredThemes.map((theme) => (
-            <Card
+            <button
               key={theme.id}
+              type="button"
               onClick={() => handleApply(theme)}
               className={cn(
-                "p-4 border-2 transition-all cursor-pointer group shadow-sm",
+                "w-full text-left p-4 border-2 transition-all cursor-pointer group shadow-sm rounded-lg bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
                 active === theme.id
                   ? "border-primary"
                   : "border-transparent hover:border-primary/20",
               )}
+              aria-label={`Apply ${theme.name} theme`}
             >
               <div
                 className="h-32 rounded border relative mb-4 flex overflow-hidden shadow-inner"
@@ -172,7 +168,7 @@ export function ThemesManager() {
               <p className="text-[10px] text-muted-foreground uppercase mt-1 leading-relaxed">
                 {theme.description}
               </p>
-            </Card>
+            </button>
           ))}
         </div>
 
@@ -187,7 +183,7 @@ export function ThemesManager() {
             variant="outline"
             size="sm"
             className="h-9 text-[10px] font-bold uppercase"
-            title="Download CSS"
+            aria-label="Export variables"
           >
             <Download size={14} className="mr-2" /> Export Variables
           </Button>

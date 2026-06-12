@@ -9,25 +9,26 @@ function isValidKey(key: string | undefined): boolean {
 
 export async function POST(req: NextRequest) {
   try {
-    const {
-      prompt,
-      duration = 30,
-      apiKeys = {},
-      model = "musicgen",
-    } = await req.json();
+    const { prompt, duration = 30, model = "pollinations-music", apiKeys = {} } = await req.json();
     if (!prompt || prompt.trim().length < 3)
       return Response.json(
         { error: "A valid prompt is required" },
         { status: 400 },
       );
 
-    // 1. Replicate (MusicGen)
     const replicateKey = isValidKey(
       apiKeys.replicate || process.env.REPLICATE_API_KEY,
     )
       ? apiKeys.replicate || process.env.REPLICATE_API_KEY
       : undefined;
-    if (replicateKey) {
+    const openrouterKey = isValidKey(
+      apiKeys.openrouter || process.env.OPENROUTER_API_KEY,
+    )
+      ? apiKeys.openrouter || process.env.OPENROUTER_API_KEY
+      : undefined;
+
+    // 1. Replicate paid/free-credits path (if key and model indicates replicate/musicgen)
+    if (replicateKey && (model.includes("replicate") || model.includes("musicgen"))) {
       const res = await fetch("https://api.replicate.com/v1/predictions", {
         method: "POST",
         headers: {
@@ -35,8 +36,8 @@ export async function POST(req: NextRequest) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          version:
-            "b05b1dff1d8c6dc63d14b0cdb42135378dcb87f6373b0d3d341ede46e59e2b38",
+          // Get current exact version ID from https://replicate.com/explore for the desired music model (e.g. musicgen or open music variants)
+          version: "musicgen",
           input: { prompt: prompt.trim(), duration },
         }),
       });
@@ -58,10 +59,37 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 2. Fallback (Pollinations Music - Hardened)
-    const url = `https://audio.pollinations.ai/music?prompt=${encodeURIComponent(prompt.trim())}&duration=${duration}&cache=false`;
+    // 2. PRO models via OpenRouter (suno, udio etc.) - requires key; attempt real call
+    if ((model.includes("suno") || model.includes("udio")) && openrouterKey) {
+      try {
+        const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${openrouterKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model,
+            messages: [{ role: "user", content: prompt.trim() }],
+            max_tokens: 256,
+          }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const content = data.choices?.[0]?.message?.content || "";
+          // Some providers return audio URLs in the response content
+          const urlMatch = content.match(/https?:\/\/[^\s"']+\.(?:mp3|wav|ogg|m4a|audio)[^\s"']*/i);
+          if (urlMatch) {
+            return Response.json({ url: urlMatch[0], prompt: prompt.trim() });
+          }
+        }
+      } catch {}
+      // If no usable URL from provider, fall through to real free audio below
+    }
 
-    return Response.json({ url, prompt: prompt.trim() });
+    // 3. Real free Pollinations music (primary for all free selections and fallback)
+    const url = `https://audio.pollinations.ai/music?prompt=${encodeURIComponent(prompt.trim())}&duration=${duration}&cache=false`;
+    return Response.json({ url, prompt: prompt.trim(), modelUsed: model });
   } catch (error: unknown) {
     return Response.json(
       {

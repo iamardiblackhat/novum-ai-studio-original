@@ -10,33 +10,19 @@ import {
   Eye,
   Braces,
   Layout,
-  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ChatInterface, Model } from "./chat-interface";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { cn } from "@/lib/utils";
 
 const webModels: Model[] = [
-  {
-    id: "qwen/qwen-3.5-72b-chat",
-    name: "Qwen 3.5 72B",
-    provider: "openrouter",
-    badge: "Elite",
-  },
-  {
-    id: "openai/gpt-5-turbo",
-    name: "GPT-5 Turbo",
-    provider: "openrouter",
-    badge: "Fast",
-  },
-  {
-    id: "anthropic/claude-4-sonnet",
-    name: "Claude 4 Sonnet",
-    provider: "openrouter",
-    badge: "Pro",
-  },
+  // Real OpenRouter models (require key for access; free tiers available on some via :free suffix)
+  { id: "qwen/qwen-3.5-72b-chat", name: "Qwen 3.5 72B", provider: "openrouter", badge: "Elite", requiresKey: true },
+  { id: "openai/gpt-5-turbo", name: "GPT-5 Turbo", provider: "openrouter", badge: "Fast", requiresKey: true },
+  { id: "anthropic/claude-4-sonnet", name: "Claude 4 Sonnet", provider: "openrouter", badge: "Pro", requiresKey: true },
+  // Prefer free tiers when key present
+  { id: "google/gemma-4-26b-a4b-it:free", name: "Gemma 4 26B (Free Tier)", provider: "openrouter", badge: "Free", requiresKey: true },
 ];
 
 type Viewport = "desktop" | "tablet" | "mobile";
@@ -61,6 +47,19 @@ export function WebBuilder() {
       welcomeDescription="Production-grade semantic codebase generation for modern web architectures."
       showAttachments={false}
       apiEndpoint="chat"
+      systemPrompt="You are a senior web engineer. When asked to create a website or component, provide ONLY the complete, self-contained HTML/CSS/JS code. Use modern, responsive design and Vanilla CSS/JS. Do not include explanations, just the code inside a single HTML file."
+      onResponse={(data) => {
+        if (data.content) {
+          // Extract code from markdown if present
+          let code = data.content;
+          const match =
+            code.match(/```html\s*([\s\S]*?)```/) ||
+            code.match(/```([\s\S]*?)```/);
+          if (match) code = match[1];
+          setGeneratedCode(code.trim());
+          setActiveTab("preview");
+        }
+      }}
     >
       <Card className="flex flex-col h-full bg-background border rounded-lg overflow-hidden shadow-sm">
         <div className="flex items-center justify-between p-3 border-b bg-muted/30">
@@ -94,12 +93,12 @@ export function WebBuilder() {
             <div className="flex items-center gap-1 bg-background border rounded p-0.5">
               {(["desktop", "tablet", "mobile"] as Viewport[]).map((v) => (
                 <Button
-                  key={v}
+                  key={`vp-${v}`}
                   variant={viewport === v ? "secondary" : "ghost"}
                   size="icon"
                   className="h-7 w-7"
                   onClick={() => setViewport(v)}
-                  title={`${v} view`}
+                  aria-label={`${v} view`}
                 >
                   {v === "desktop" ? (
                     <Monitor size={14} />
@@ -124,7 +123,7 @@ export function WebBuilder() {
                 a.download = "forge-export.html";
                 a.click();
               }}
-              title="Download Source"
+              aria-label="Download Source"
             >
               <Download size={14} />
             </Button>

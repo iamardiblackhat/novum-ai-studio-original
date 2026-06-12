@@ -10,18 +10,15 @@ import {
   Bot,
   Workflow,
   LayoutTemplate,
-  Settings,
-  HelpCircle,
   Plus,
   Palette,
   Layers,
   Film,
   Radio,
   Zap,
-  Star,
   Compass,
-  ArrowUpRight,
   PenTool,
+  Settings,
 } from "lucide-react";
 import {
   Sidebar,
@@ -34,11 +31,9 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarSeparator,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ThemeToggle } from "./theme-toggle";
 
 interface AppSidebarProps {
@@ -180,12 +175,13 @@ export function AppSidebar({
       <SidebarFooter className="p-4 border-t">
         <div className="flex items-center gap-3 rounded-md p-2 hover:bg-accent transition-colors cursor-pointer group">
           <Avatar className="h-8 w-8 border">
-            <AvatarImage src="/placeholder-user.jpg" alt="User avatar" />
             <AvatarFallback>U</AvatarFallback>
           </Avatar>
-          <div className="flex-1 truncate">
-            <p className="text-sm font-medium">User</p>
-            <p className="text-xs text-muted-foreground">Premium Plan</p>
+          <div className="flex flex-col">
+            <p className="text-sm font-medium">Studio Operator</p>
+            <p className="text-xs text-muted-foreground uppercase font-black text-[8px]">
+              Open Source Tier
+            </p>
           </div>
           <Settings className="h-4 w-4 text-muted-foreground" />
         </div>

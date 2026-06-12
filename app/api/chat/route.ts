@@ -19,19 +19,22 @@ export async function POST(req: NextRequest) {
       return Response.json({ error: "Messages are required" }, { status: 400 });
     }
 
-    // 1. OpenRouter (Primary)
+    // 1. OpenRouter (Primary) - prefer free tiers for anonymous-reliable chat
     const openrouterKey = isValidKey(
       apiKeys.openrouter || process.env.OPENROUTER_API_KEY,
     )
       ? apiKeys.openrouter || process.env.OPENROUTER_API_KEY
       : undefined;
-    if (
-      openrouterKey &&
-      (model.includes("/") ||
-        model.startsWith("gpt") ||
-        model.startsWith("claude") ||
-        model.startsWith("gemini"))
-    ) {
+    const wantsOpenRouter =
+      model.includes("/") ||
+      model.startsWith("gpt") ||
+      model.startsWith("claude") ||
+      model.startsWith("gemini") ||
+      model.includes(":free") ||
+      model.includes("gemma-4") ||
+      model.includes("nemotron") ||
+      model.includes("nex-");
+    if (openrouterKey && wantsOpenRouter) {
       const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
         headers: {
@@ -157,15 +160,67 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 3. Public Fallback
+    // 3. Groq direct (free tier with key - very reliable)
+    const groqKey2 = isValidKey(apiKeys.groq || process.env.GROQ_API_KEY)
+      ? apiKeys.groq || process.env.GROQ_API_KEY
+      : undefined;
+    if (groqKey2 && (model.includes("llama") || model.includes("mixtral") || model.includes("gemma") || model.includes("qwen"))) {
+      const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${groqKey2}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ model, messages }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        return Response.json({
+          content: data.choices[0]?.message?.content || "",
+        });
+      }
+    }
+
+    // 4. Google direct (free tier with key)
+    const googleKey2 = isValidKey(apiKeys.google || process.env.GEMINI_API_KEY)
+      ? apiKeys.google || process.env.GEMINI_API_KEY
+      : undefined;
+    if (googleKey2 && (model.startsWith("gemini") || model.includes("gemini"))) {
+      const contents = messages
+        .filter((m: any) => m.role !== "system")
+        .map((m: any) => ({
+          role: m.role === "assistant" ? "model" : "user",
+          parts: [{ text: m.content }],
+        }));
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${googleKey2}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ contents }),
+        },
+      );
+      if (res.ok) {
+        const data = await res.json();
+        return Response.json({
+          content: data.candidates[0]?.content?.parts[0]?.text || "",
+        });
+      }
+    }
+
+    // 5. Public Fallback (June 2026 current free pollinations text models - may queue/rate limit for anonymous)
     const safeModel = [
       "openai-large",
-      "claude",
+      "gpt-5.5",
       "gemini",
-      "llama",
-      "mistral",
-      "deepseek",
+      "gemini-3.5-flash",
       "qwen-coder",
+      "qwen-large",
+      "mistral",
+      "mistral-4",
+      "deepseek",
+      "llama",
+      "grok-4.3",
     ].includes(model)
       ? model
       : "openai-large";
@@ -186,7 +241,7 @@ export async function POST(req: NextRequest) {
     }
 
     throw new Error(
-      "All engines failed. Please provide a direct API key in settings.",
+      "All engines failed. Provide an API key (OpenRouter/Groq/Gemini free tiers recommended for reliable chat; Pollinations as last free fallback).",
     );
   } catch (error: unknown) {
     return Response.json(

@@ -2,15 +2,12 @@
 
 import { useState } from "react";
 import {
-  Download,
-  Heart,
-  Grid3X3,
-  LayoutGrid,
   Sparkles,
-  Share2,
   Trash2,
   History,
   ImageIcon,
+  Grid3X3,
+  LayoutGrid,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -35,24 +32,17 @@ interface GeneratedImage {
 }
 
 const imageModels: Model[] = [
-  {
-    id: "flux",
-    name: "FLUX.2 [ultra]",
-    provider: "pollinations",
-    badge: "Elite",
-  },
-  {
-    id: "flux-realism",
-    name: "FLUX Realism V2",
-    provider: "pollinations",
-    badge: "Pro",
-  },
-  {
-    id: "openai/dall-e-4",
-    name: "DALL-E 4",
-    provider: "openrouter",
-    badge: "Precision",
-  },
+  // Pollinations free image models (no key, real generation when not queued)
+  { id: "flux", name: "FLUX.2 [ultra]", provider: "pollinations", badge: "Free" },
+  { id: "flux-realism", name: "FLUX Realism V2", provider: "pollinations", badge: "Free" },
+  { id: "flux-anime", name: "FLUX Anime V2", provider: "pollinations", badge: "Free" },
+  { id: "seedream5", name: "Seedream 5 (Free)", provider: "pollinations", badge: "Free" },
+  { id: "seedream-pro", name: "Seedream Pro (Free)", provider: "pollinations", badge: "Free" },
+  { id: "gptimage", name: "GPT Image (Free)", provider: "pollinations", badge: "Free" },
+  { id: "gptimage-large", name: "GPT Image Large (Free)", provider: "pollinations", badge: "Free" },
+  // Pro/paid (require key)
+  { id: "openai/dall-e-4", name: "DALL-E 4", provider: "openrouter", badge: "PRO", requiresKey: true },
+  { id: "stability/stable-diffusion-4", name: "SD 4 Ultra", provider: "openrouter", badge: "PRO", requiresKey: true },
 ];
 
 export function ImageGenerator() {
@@ -71,6 +61,21 @@ export function ImageGenerator() {
       welcomeDescription="Production-grade image synthesis using ultra-high-fidelity neural diffusers."
       showAttachments={false}
       apiEndpoint="image"
+      onResponse={(data) => {
+        if (data.url) {
+          const validUrl: string = data.url;
+          setImages((prev) => [
+            {
+              id: Date.now().toString(),
+              url: validUrl,
+              prompt: data.prompt || "Generated asset",
+              model: "flux",
+              timestamp: new Date(),
+            },
+            ...prev,
+          ]);
+        }
+      }}
     >
       <Card className="flex flex-col h-full bg-background border rounded-lg overflow-hidden shadow-sm">
         <div className="px-4 py-2 border-b bg-muted/30 flex items-center justify-between">
@@ -84,7 +89,7 @@ export function ImageGenerator() {
                 size="icon"
                 className="h-7 w-7"
                 onClick={() => setViewMode("grid")}
-                title="Grid view"
+                aria-label="Grid view"
               >
                 <Grid3X3 size={14} />
               </Button>
@@ -93,7 +98,7 @@ export function ImageGenerator() {
                 size="icon"
                 className="h-7 w-7"
                 onClick={() => setViewMode("focus")}
-                title="Focus view"
+                aria-label="Focus view"
               >
                 <LayoutGrid size={14} />
               </Button>
@@ -125,7 +130,11 @@ export function ImageGenerator() {
               {images.map((img) => (
                 <Dialog key={img.id}>
                   <DialogTrigger asChild>
-                    <Card className="relative aspect-square rounded border overflow-hidden cursor-zoom-in group shadow-sm">
+                    <button
+                      type="button"
+                      className="relative aspect-square rounded border overflow-hidden cursor-zoom-in group shadow-sm text-left"
+                      aria-label={`View ${img.prompt}`}
+                    >
                       <img
                         src={img.url}
                         alt={img.prompt}
@@ -141,7 +150,7 @@ export function ImageGenerator() {
                               e.stopPropagation();
                               deleteImage(img.id);
                             }}
-                            title="Delete"
+                            aria-label="Delete image"
                           >
                             <Trash2 size={14} />
                           </Button>
@@ -150,12 +159,12 @@ export function ImageGenerator() {
                           <p className="text-[10px] font-bold text-white line-clamp-2 uppercase">
                             {img.prompt}
                           </p>
-                          <Badge className="mt-2 text-[8px] font-black uppercase h-4 bg-primary border-0">
+                          <Badge className="mt-2 text-[8px] font-black uppercase h-4 bg-primary border-0 text-white">
                             {img.model}
                           </Badge>
                         </div>
                       </div>
-                    </Card>
+                    </button>
                   </DialogTrigger>
                   <DialogContent className="max-w-3xl p-0 border-0 bg-transparent shadow-none">
                     <DialogHeader className="hidden">

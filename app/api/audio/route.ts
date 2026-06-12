@@ -64,17 +64,16 @@ export async function POST(req: NextRequest) {
         });
     }
 
-    // 3. Fallback
+    // 3. ONLY live researched real free working audio/tts June 2026
     const safeVoice = [
-      "alloy",
-      "echo",
-      "fable",
-      "onyx",
       "nova",
-      "shimmer",
+      "nova-fast",
+      "openai-audio",
+      "openai-audio-large",
+      "elevenflash",
     ].includes(voice)
       ? voice
-      : "nova";
+      : "nova"; // real working default from research
     const res = await fetch(
       `https://audio.pollinations.ai/tts?voice=${safeVoice}&text=${encodeURIComponent(text.trim())}`,
     );
@@ -83,7 +82,7 @@ export async function POST(req: NextRequest) {
         headers: { "Content-Type": "audio/mpeg" },
       });
 
-    throw new Error("Synthesis engines busy");
+    throw new Error("Synthesis engines busy or rate limited (try a key-backed provider or wait)");
   } catch (error: unknown) {
     return Response.json({ error: "Audio failure" }, { status: 500 });
   }

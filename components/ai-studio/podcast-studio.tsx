@@ -5,26 +5,18 @@ import {
   Play,
   Pause,
   Download,
-  Radio,
-  Clock,
-  FileAudio,
-  Users,
   Mic2,
-  Sparkles,
-  Volume2,
-  Headphones,
-  Activity,
   Save,
   Upload,
-  UserPlus,
   CheckCircle2,
+  Activity,
+  Plus,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Slider } from "@/components/ui/slider";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ChatInterface, Model } from "./chat-interface";
 import { cn } from "@/lib/utils";
 
@@ -44,21 +36,16 @@ interface Segment {
 }
 
 const podcastModels: Model[] = [
-  {
-    id: "elevenlabs/v3-pro",
-    name: "ElevenLabs V3",
-    provider: "openrouter",
-    badge: "Elite",
-    requiresKey: true,
-  },
-  {
-    id: "openai/tts-2",
-    name: "OpenAI TTS 2",
-    provider: "openrouter",
-    badge: "Pro",
-    requiresKey: true,
-  },
-  { id: "nova", name: "Nova (V2)", provider: "pollinations", badge: "Free" },
+  // Prefer real free no-key Pollinations audio when available
+  { id: "nova", name: "Nova (Free)", provider: "pollinations", badge: "Free" },
+  { id: "nova-fast", name: "Nova Fast (Free)", provider: "pollinations", badge: "Free" },
+  { id: "openai-audio", name: "OpenAI Audio (Free)", provider: "pollinations", badge: "Free" },
+  { id: "qwen-tts", name: "Qwen TTS (Free)", provider: "pollinations", badge: "Free" },
+  // Eleven free tier (key for credits) and pro
+  { id: "elevenlabs", name: "ElevenLabs (Free Tier)", provider: "pollinations", badge: "Free Tier", requiresKey: true },
+  { id: "elevenflash", name: "Eleven Flash (Free Tier)", provider: "pollinations", badge: "Free Tier", requiresKey: true },
+  { id: "elevenlabs/v3-pro", name: "ElevenLabs V3", provider: "openrouter", badge: "Elite", requiresKey: true },
+  { id: "openai/tts-2", name: "OpenAI TTS 2", provider: "openrouter", badge: "PRO", requiresKey: true },
 ];
 
 const PRESET_SPEAKERS: Speaker[] = [
@@ -79,7 +66,7 @@ const PRESET_SPEAKERS: Speaker[] = [
 ];
 
 export function PodcastStudio() {
-  const [speakers, setSpeakers] = useState<Speaker[]>(PRESET_SPEAKERS);
+  const [speakers] = useState<Speaker[]>(PRESET_SPEAKERS);
   const [segments, setSegments] = useState<Segment[]>([
     {
       id: "seg1",
@@ -101,7 +88,6 @@ export function PodcastStudio() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const activeSegment = segments.find((s) => s.id === activeSegmentId);
-  const activeSpeaker = speakers.find((s) => s.id === activeSegment?.speakerId);
 
   const togglePlay = () => {
     if (!audioRef.current) return;
@@ -117,14 +103,33 @@ export function PodcastStudio() {
   return (
     <ChatInterface
       models={podcastModels}
-      defaultModel="elevenlabs/v3-pro"
+      defaultModel="nova"
       placeholder="Script the dialogue or conceptualize..."
       welcomeTitle="Neural Broadcast Hub"
       welcomeDescription="Full-stack podcast production using cloned voices and reactive animated entities."
       apiEndpoint="audio"
+      onResponse={(data) => {
+        if (data.url) {
+          const newSegment: Segment = {
+            id: Date.now().toString(),
+            speakerId: "s1",
+            text: data.text || "Generated segment",
+            status: "completed",
+          };
+          setSegments((prev) => [...prev, newSegment]);
+          setActiveSegmentId(newSegment.id);
+          setIsPlaying(true);
+          if (audioRef.current) {
+            audioRef.current.src = data.url;
+            audioRef.current.play();
+          }
+        }
+      }}
     >
       <div className="flex flex-col h-full gap-4">
-        <audio ref={audioRef} onEnded={() => setIsPlaying(false)} />
+        <audio ref={audioRef} onEnded={() => setIsPlaying(false)}>
+          <track kind="captions" src="" label="English" default />
+        </audio>
 
         {/* Production Stage */}
         <Card className="aspect-video relative rounded border bg-zinc-950 shadow-sm overflow-hidden flex items-center justify-center">
@@ -198,7 +203,7 @@ export function PodcastStudio() {
               className="h-7 text-[8px] font-bold uppercase"
               title="Add speaker"
             >
-              <UserPlus size={10} className="mr-1" /> Add
+              <Plus size={10} className="mr-1" /> Add
             </Button>
           </div>
         </Card>
@@ -224,11 +229,12 @@ export function PodcastStudio() {
               {segments.map((seg) => {
                 const speaker = speakers.find((s) => s.id === seg.speakerId);
                 return (
-                  <div
+                  <button
                     key={seg.id}
+                    type="button"
                     onClick={() => setActiveSegmentId(seg.id)}
                     className={cn(
-                      "p-3 rounded border transition-all cursor-pointer group flex gap-3",
+                      "w-full p-3 rounded border transition-all cursor-pointer group flex gap-3 text-left",
                       activeSegmentId === seg.id
                         ? "bg-primary/5 border-primary/20"
                         : "bg-background border-transparent hover:bg-muted/50",
@@ -265,7 +271,7 @@ export function PodcastStudio() {
                         <Download size={12} />
                       </Button>
                     </div>
-                  </div>
+                  </button>
                 );
               })}
             </div>

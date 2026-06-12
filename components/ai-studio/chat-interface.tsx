@@ -4,28 +4,18 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import {
   Send,
   Paperclip,
-  Settings,
   ChevronDown,
-  Plus,
-  Sparkles,
-  Bot,
-  User,
   Key,
   Loader2,
-  X,
-  Command,
-  Cpu,
-  Zap,
-  FileText,
   RefreshCw,
-  Maximize2,
   Mic,
   MicOff,
+  Cpu,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -37,7 +27,6 @@ import {
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -53,13 +42,20 @@ export interface Model {
   requiresKey?: boolean;
 }
 
+export interface Attachment {
+  id: string;
+  type: string;
+  url: string;
+  name: string;
+}
+
 export interface Message {
   id: string;
   role: "user" | "assistant" | "system";
   content: string;
-  attachments?: { type: string; url: string; name: string }[];
+  attachments?: Attachment[];
   generatedContent?: {
-    type: "image" | "video" | "audio" | "code";
+    type: "image" | "video" | "audio" | "music" | "code";
     url?: string;
     code?: string;
   };
@@ -77,6 +73,16 @@ interface ChatInterfaceProps {
   welcomeTitle?: string;
   welcomeDescription?: string;
   suggestedPrompts?: string[];
+  onResponse?: (data: {
+    content?: string;
+    url?: string;
+    text?: string;
+    prompt?: string;
+    error?: string;
+    modelUsed?: string;
+    duration?: number;
+    [key: string]: any;
+  }) => void;
   children?: React.ReactNode;
 }
 
@@ -84,17 +90,19 @@ export function ChatInterface({
   models,
   defaultModel,
   placeholder = "Type your command...",
+  systemPrompt,
   showAttachments = true,
   apiEndpoint = "chat",
   welcomeTitle = "AI Command Console",
   welcomeDescription = "Production interface for high-performance neural model orchestration.",
   suggestedPrompts = [],
+  onResponse,
   children,
 }: ChatInterfaceProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [selectedModel, setSelectedModel] = useState(
-    defaultModel || models[0]?.id || "openai/gpt-5-turbo",
+    defaultModel || models[0]?.id || "google/gemma-4-26b-a4b-it:free",
   );
   const [isLoading, setIsLoading] = useState(false);
   const [apiKeys, setApiKeys] = useState<Record<string, string>>({});
@@ -136,8 +144,10 @@ export function ChatInterface({
   }, []);
 
   useEffect(() => {
-    scrollToBottom();
-  }, [messages, isLoading, scrollToBottom]);
+    if (messages.length > 0 || isLoading) {
+      scrollToBottom();
+    }
+  }, [messages.length, isLoading, scrollToBottom]);
 
   // Speech to Text Logic
   useEffect(() => {
@@ -182,10 +192,11 @@ export function ChatInterface({
     if (!input.trim() && pendingAttachments.length === 0) return;
 
     const userMessage: Message = {
-      id: Date.now().toString(),
+      id: Math.random().toString(36).substring(7),
       role: "user",
       content: input,
       attachments: pendingAttachments.map((f) => ({
+        id: Math.random().toString(36).substring(7),
         type: f.type,
         url: URL.createObjectURL(f),
         name: f.name,
@@ -207,6 +218,9 @@ export function ChatInterface({
           messages:
             apiEndpoint === "chat"
               ? [
+                  ...(systemPrompt
+                    ? [{ role: "system", content: systemPrompt }]
+                    : []),
                   ...messages.map((m) => ({
                     role: m.role,
                     content: m.content,
@@ -229,29 +243,33 @@ export function ChatInterface({
       const data = await res.json();
       if (data.error) throw new Error(data.error);
 
+      if (onResponse) onResponse(data);
+
       setMessages((prev) => [
         ...prev,
         {
-          id: (Date.now() + 1).toString(),
+          id: Math.random().toString(36).substring(7),
           role: "assistant",
           content:
             apiEndpoint === "chat"
               ? data.content
               : `Task completed: ${currentInput}`,
-          generatedContent:
+            generatedContent:
             apiEndpoint !== "chat"
               ? { type: apiEndpoint as any, url: data.url }
               : undefined,
+
           timestamp: new Date(),
         },
       ]);
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Unknown failure";
       setMessages((prev) => [
         ...prev,
         {
-          id: (Date.now() + 1).toString(),
+          id: Math.random().toString(36).substring(7),
           role: "assistant",
-          content: `Error: ${err.message}`,
+          content: `Error: ${message}`,
           timestamp: new Date(),
         },
       ]);
@@ -273,6 +291,7 @@ export function ChatInterface({
                   variant="ghost"
                   size="sm"
                   className="h-8 gap-1 font-bold text-xs uppercase"
+                  aria-label="Select model"
                 >
                   {currentModel?.name || "Select Model"}{" "}
                   <ChevronDown size={14} />
@@ -284,7 +303,7 @@ export function ChatInterface({
                 </DropdownMenuLabel>
                 {models.map((m) => (
                   <DropdownMenuItem
-                    key={m.id}
+                    key={`model-${m.id}`}
                     onClick={() => setSelectedModel(m.id)}
                     className="text-xs"
                   >
@@ -311,7 +330,7 @@ export function ChatInterface({
             size="icon"
             onClick={() => setMessages([])}
             className="h-8 w-8"
-            title="Clear Chat"
+            aria-label="Clear chat"
           >
             <RefreshCw size={14} />
           </Button>
@@ -327,9 +346,9 @@ export function ChatInterface({
                   {welcomeDescription}
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-6 max-w-md mx-auto px-4">
-                  {suggestedPrompts.map((p, i) => (
+                  {suggestedPrompts.map((p) => (
                     <Button
-                      key={i}
+                      key={`prompt-${p.substring(0, 10)}`}
                       variant="outline"
                       size="sm"
                       className="text-[10px] font-medium justify-start h-auto py-2 px-3"
@@ -368,9 +387,9 @@ export function ChatInterface({
                         : "bg-card",
                     )}
                   >
-                    {m.attachments?.map((att, i) => (
+                    {m.attachments?.map((att) => (
                       <div
-                        key={i}
+                        key={att.id}
                         className="mb-2 rounded border overflow-hidden"
                       >
                         {att.type.startsWith("image") ? (
@@ -389,18 +408,39 @@ export function ChatInterface({
                     <p className="whitespace-pre-wrap">{m.content}</p>
                     {m.generatedContent && (
                       <div className="mt-2 rounded border bg-black overflow-hidden">
-                        {m.generatedContent.type === "image" ? (
+                        {m.generatedContent.type === "image" && m.generatedContent.url && (
                           <img
                             src={m.generatedContent.url}
                             alt="Generated asset"
                             className="max-w-full h-auto"
                           />
-                        ) : (
+                        )}
+                        {m.generatedContent.type === "audio" && m.generatedContent.url && (
                           <audio
                             controls
                             src={m.generatedContent.url}
                             className="w-full h-8 scale-90"
-                          />
+                          >
+                            <track kind="captions" />
+                          </audio>
+                        )}
+                        {m.generatedContent.type === "video" && m.generatedContent.url && (
+                          <video
+                            controls
+                            src={m.generatedContent.url}
+                            className="max-w-full h-auto"
+                          >
+                            <track kind="captions" />
+                          </video>
+                        )}
+                        {m.generatedContent.type === "music" && m.generatedContent.url && (
+                          <audio
+                            controls
+                            src={m.generatedContent.url}
+                            className="w-full h-8 scale-90"
+                          >
+                            <track kind="captions" />
+                          </audio>
                         )}
                       </div>
                     )}
@@ -433,6 +473,7 @@ export function ChatInterface({
                 }
               }}
               className="w-full min-h-[60px] p-3 text-xs font-medium outline-none resize-none bg-transparent pr-32"
+              aria-label="Chat input"
             />
             <div className="absolute right-2 bottom-2 flex items-center gap-1">
               <Button
@@ -443,7 +484,7 @@ export function ChatInterface({
                   "h-8 w-8",
                   isListening && "text-rose-500 bg-rose-500/10",
                 )}
-                title="Voice Input"
+                aria-label="Voice Input"
               >
                 {isListening ? <MicOff size={16} /> : <Mic size={16} />}
               </Button>
@@ -453,7 +494,7 @@ export function ChatInterface({
                   size="icon"
                   onClick={() => fileInputRef.current?.click()}
                   className="h-8 w-8"
-                  title="Attach Files"
+                  aria-label="Attach files"
                 >
                   <Paperclip size={16} />
                   <input
@@ -479,7 +520,7 @@ export function ChatInterface({
                   (!input.trim() && pendingAttachments.length === 0)
                 }
                 className="h-8 w-8 shadow-sm"
-                title="Send Command"
+                aria-label="Send command"
               >
                 {isLoading ? (
                   <Loader2 size={16} className="animate-spin" />
@@ -515,7 +556,7 @@ export function ChatInterface({
               "stability",
               "runway",
             ].map((p) => (
-              <div key={p} className="space-y-1">
+              <div key={`key-${p}`} className="space-y-1">
                 <Label className="text-[10px] font-bold uppercase">
                   {p} Key
                 </Label>
@@ -533,6 +574,7 @@ export function ChatInterface({
           <Button
             className="w-full mt-6 uppercase font-bold"
             onClick={() => setShowApiKeyDialog(false)}
+            aria-label="Synchronize keys"
           >
             Synchronize
           </Button>

@@ -1,36 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import {
-  Search,
-  Star,
-  Copy,
-  ExternalLink,
-  Zap,
-  Globe,
-  MessageSquare,
-  ImageIcon,
-  Music,
-  Video,
-  Mic,
-  Code2,
-  BarChart,
-  Mail,
-  ShoppingCart,
-  BookOpen,
-  Cpu,
-  Filter,
-  Check,
-  Sparkles,
-  History,
-} from "lucide-react";
+import { Search, Star, Copy, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
 
 type Category =
   | "all"
@@ -123,7 +99,10 @@ export function TemplatesLibrary() {
           </div>
         </div>
 
-        <Tabs value={category} onValueChange={(v) => setCategory(v as any)}>
+        <Tabs
+          value={category}
+          onValueChange={(v) => setCategory(v as Category)}
+        >
           <TabsList className="bg-muted/50 border h-9 p-1">
             {["all", "chat", "image", "video", "audio", "web", "code"].map(
               (cat) => (

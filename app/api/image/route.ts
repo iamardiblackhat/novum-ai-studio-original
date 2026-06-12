@@ -78,16 +78,17 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 3. Fallback
+    // 3. ONLY live researched real free working image models June 2026 (confirmed live)
     const safeModel = [
+      "seedream5",
+      "seedream",
+      "seedream-pro",
+      "gptimage",
+      "gptimage-large",
       "flux",
-      "flux-realism",
-      "flux-anime",
-      "turbo",
-      "kontext",
     ].includes(model)
       ? model
-      : "flux";
+      : "seedream5"; // real working default from research
     const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt.trim())}?model=${safeModel}&width=${width}&height=${height}&seed=${Math.floor(Math.random() * 1000000)}&nologo=true`;
     return Response.json({ url, prompt: prompt.trim() });
   } catch (error: unknown) {

@@ -11,7 +11,6 @@ import {
   Zap,
   History,
   Ear,
-  Headphones,
   Upload,
   Save,
 } from "lucide-react";
@@ -33,21 +32,16 @@ interface GeneratedAudio {
 }
 
 const voiceModels: Model[] = [
-  {
-    id: "elevenlabs/v3-pro",
-    name: "ElevenLabs V3",
-    provider: "openrouter",
-    badge: "Elite",
-    requiresKey: true,
-  },
-  {
-    id: "openai/tts-2",
-    name: "OpenAI TTS 2",
-    provider: "openrouter",
-    badge: "Pro",
-    requiresKey: true,
-  },
-  { id: "nova", name: "Nova (V2)", provider: "pollinations", badge: "Free" },
+  // Free no-key Pollinations voices
+  { id: "nova", name: "Nova (Free)", provider: "pollinations", badge: "Free" },
+  { id: "nova-fast", name: "Nova Fast (Free)", provider: "pollinations", badge: "Free" },
+  { id: "openai-audio", name: "OpenAI Audio (Free)", provider: "pollinations", badge: "Free" },
+  { id: "qwen-tts", name: "Qwen TTS (Free)", provider: "pollinations", badge: "Free" },
+  // Eleven free tier (key) + pro
+  { id: "elevenlabs", name: "ElevenLabs (Free Tier)", provider: "pollinations", badge: "Free Tier", requiresKey: true },
+  { id: "elevenflash", name: "Eleven Flash (Free Tier)", provider: "pollinations", badge: "Free Tier", requiresKey: true },
+  { id: "elevenlabs/v3-pro", name: "ElevenLabs V3", provider: "openrouter", badge: "Elite", requiresKey: true },
+  { id: "openai/tts-2", name: "OpenAI TTS 2", provider: "openrouter", badge: "PRO", requiresKey: true },
 ];
 
 export function VoiceCloning() {
@@ -72,14 +66,35 @@ export function VoiceCloning() {
   return (
     <ChatInterface
       models={voiceModels}
-      defaultModel="elevenlabs/v3-pro"
+      defaultModel="nova"
       placeholder="Type the script for synthesis..."
       welcomeTitle="Neural Voice Studio"
       welcomeDescription="Professional-grade speech synthesis and high-fidelity voice cloning architecture."
       apiEndpoint="audio"
+      onResponse={(data) => {
+        if (data.url) {
+          const newClip: GeneratedAudio = {
+            id: Date.now().toString(),
+            url: data.url,
+            text: data.text || "Generated speech",
+            voice: "Nova",
+            provider: "Pollinations",
+            timestamp: new Date(),
+          };
+          setAudioClips((prev) => [newClip, ...prev]);
+          setCurrentAudio(newClip);
+          setIsPlaying(true);
+          if (audioRef.current) {
+            audioRef.current.src = data.url;
+            audioRef.current.play();
+          }
+        }
+      }}
     >
       <div className="flex flex-col h-full gap-4">
-        <audio ref={audioRef} onEnded={() => setIsPlaying(false)} />
+        <audio ref={audioRef} onEnded={() => setIsPlaying(false)}>
+          <track kind="captions" src="" label="English" default />
+        </audio>
 
         {/* Console */}
         <Card className="p-6 border bg-card shadow-sm flex flex-col items-center">
@@ -95,7 +110,7 @@ export function VoiceCloning() {
               size="sm"
               className="h-7 text-[9px] font-bold uppercase"
               onClick={() => fileInputRef.current?.click()}
-              title="Upload voice sample"
+              aria-label="Upload voice sample"
             >
               <Upload size={12} className="mr-1" /> Clone New
               <input
@@ -138,7 +153,7 @@ export function VoiceCloning() {
                 onClick={togglePlay}
                 disabled={!currentAudio}
                 className="h-14 w-14 rounded-full shadow-md"
-                title={isPlaying ? "Pause" : "Play"}
+                aria-label={isPlaying ? "Pause" : "Play"}
               >
                 {isPlaying ? (
                   <Pause size={28} />
@@ -177,7 +192,7 @@ export function VoiceCloning() {
               size="sm"
               className="h-6 text-[8px] font-bold uppercase"
               disabled={!currentAudio}
-              title="Save project"
+              aria-label="Save current project"
             >
               <Save size={12} className="mr-1" /> Save
             </Button>
@@ -193,8 +208,9 @@ export function VoiceCloning() {
             ) : (
               <div className="p-2 space-y-1">
                 {audioClips.map((clip) => (
-                  <div
+                  <button
                     key={clip.id}
+                    type="button"
                     onClick={() => {
                       setCurrentAudio(clip);
                       setIsPlaying(true);
@@ -204,7 +220,7 @@ export function VoiceCloning() {
                       }
                     }}
                     className={cn(
-                      "flex items-center gap-3 p-3 rounded border transition-all cursor-pointer group",
+                      "w-full flex items-center gap-3 p-3 rounded border transition-all cursor-pointer group text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
                       currentAudio?.id === clip.id
                         ? "bg-primary/5 border-primary/20"
                         : "bg-background border-transparent hover:bg-muted/50",
@@ -234,7 +250,7 @@ export function VoiceCloning() {
                         size="icon"
                         className="h-7 w-7"
                         asChild
-                        title="Download"
+                        aria-label="Download clip"
                       >
                         <a href={clip.url} download>
                           <Download size={12} />
@@ -250,12 +266,12 @@ export function VoiceCloning() {
                             prev.filter((c) => c.id !== clip.id),
                           );
                         }}
-                        title="Delete"
+                        aria-label="Delete clip"
                       >
                         <Trash2 size={12} />
                       </Button>
                     </div>
-                  </div>
+                  </button>
                 ))}
               </div>
             )}

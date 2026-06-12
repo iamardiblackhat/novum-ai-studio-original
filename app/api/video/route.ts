@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
     if (!prompt || prompt.trim().length < 3)
       return Response.json({ error: "Valid prompt required" }, { status: 400 });
 
-    // 1. Replicate
+    // 1. Replicate (if key provided - supports free tier / credits)
     const replicateKey = isValidKey(
       apiKeys.replicate || process.env.REPLICATE_API_KEY,
     )
@@ -31,9 +31,10 @@ export async function POST(req: NextRequest) {
           Authorization: `Token ${replicateKey}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          version:
-            "a16223258525b6c201a488d3f6073e9c99f97a1a2b2e2e2e2e2e2e2e2e2e2e2e",
+          body: JSON.stringify({
+          // Replicate optional (key for advanced). Primary real working free: pollinations seedance-pro / wan-pro etc.
+          // Live researched June 2026: Wan2.2 / Seedance / LTX equivalents via pollinations real endpoints.
+          version: "wan-2-5", // Replace with exact current Replicate version ID if using paid key path
           input: { prompt: prompt.trim() },
         }),
       });
@@ -55,14 +56,21 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 2. Fallback
-    const safeModel = ["wan", "wan-fast", "ltx-2", "seedance-pro"].includes(
-      model,
-    )
+    // 2. Free pollinations fallback (June 2026 current video models)
+    const safeModel = [
+      "wan",
+      "wan-fast",
+      "wan-pro",
+      "ltx-2",
+      "seedance-pro",
+      "seedance-2.0",
+      "p-video-720p",
+      "p-video-1080p",
+    ].includes(model)
       ? model
       : "wan";
     const url = `https://video.pollinations.ai/${encodeURIComponent(prompt.trim())}?model=${safeModel}&duration=${duration}`;
-    return Response.json({ url, prompt: prompt.trim() });
+    return Response.json({ url, prompt: prompt.trim(), modelUsed: safeModel, duration });
   } catch (error: unknown) {
     return Response.json({ error: "Video failure" }, { status: 500 });
   }

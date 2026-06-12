@@ -1,10 +1,9 @@
 "use client";
 
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { Sparkles, Menu, Bell, Search, User } from "lucide-react";
+import { Menu, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 interface MobileHeaderProps {
   activeSection: string;
@@ -59,7 +58,6 @@ export function MobileHeader({ activeSection }: MobileHeaderProps) {
           <span className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-primary border-2 border-background" />
         </Button>
         <Avatar className="h-9 w-9 border-2 border-primary/10">
-          <AvatarImage src="/placeholder-user.jpg" />
           <AvatarFallback className="bg-primary text-primary-foreground font-black text-[10px]">
             U
           </AvatarFallback>

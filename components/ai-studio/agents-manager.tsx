@@ -2,29 +2,15 @@
 
 import { useState } from "react";
 import {
-  Bot,
   Plus,
-  Play,
-  Settings,
-  Trash2,
-  Copy,
-  MoreHorizontal,
   Globe,
   Code2,
   Mail,
   Database,
   Search,
-  CheckCircle2,
-  AlertCircle,
-  Clock,
-  Loader2,
   Cpu,
   Terminal,
-  Share2,
-  Filter,
-  Activity,
   Blocks,
-  Sparkles,
   Zap,
   RefreshCw,
 } from "lucide-react";
@@ -32,15 +18,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 
 interface Agent {
@@ -52,6 +31,11 @@ interface Agent {
   tasks: number;
   tools: string[];
   avatar: string;
+  history?: {
+    role: "user" | "assistant";
+    content: string;
+    timestamp: number;
+  }[];
 }
 
 const PRESETS: Agent[] = [
@@ -99,15 +83,70 @@ export function AgentsManager() {
   const [selectedId, setSelectedId] = useState<string | null>(PRESETS[0].id);
   const [isExecuting, setIsExecuting] = useState(false);
   const [prompt, setPrompt] = useState("");
+  const [logs] = useState<string[]>([
+    `[SYSTEM] Neural fleet v${(Math.random() * 5 + 4).toFixed(1)} online.`,
+  ]);
+  const [stats] = useState({
+    latency: Math.floor(Math.random() * 100 + 100),
+    reliability: Math.floor(Math.random() * 5 + 95),
+    load: (Math.random() * 10).toFixed(1),
+  });
 
   const activeAgent = agents.find((a) => a.id === selectedId);
 
   const handleExecute = async () => {
     if (!prompt.trim() || !activeAgent) return;
+
     setIsExecuting(true);
-    await new Promise((r) => setTimeout(r, 2000));
-    setPrompt("");
-    setIsExecuting(false);
+    const timestamp = Date.now();
+    const userMessage = { role: "user" as const, content: prompt, timestamp };
+    const updatedHistory = [...(activeAgent.history || []), userMessage];
+
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: [
+            {
+              role: "system",
+              content: `You are ${activeAgent.name}, a ${activeAgent.role} agent using the ${activeAgent.framework} framework. Your available tools are ${activeAgent.tools.join(", ")}. Respond professionally and helpfully as this agent.`,
+            },
+            ...updatedHistory.map((h) => ({
+              role: h.role,
+              content: h.content,
+            })),
+          ],
+          model: "openai-large",
+        }),
+      });
+
+      if (!res.ok) throw new Error("Connection failed");
+      const data = await res.json();
+
+      const assistantMessage = {
+        role: "assistant" as const,
+        content: data.content,
+        timestamp: Date.now(),
+      };
+
+      setAgents((prev) =>
+        prev.map((a) =>
+          a.id === activeAgent.id
+            ? {
+                ...a,
+                history: [...updatedHistory, assistantMessage],
+                tasks: a.tasks + 1,
+              }
+            : a,
+        ),
+      );
+      setPrompt("");
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsExecuting(false);
+    }
   };
 
   return (
@@ -126,7 +165,7 @@ export function AgentsManager() {
               variant="ghost"
               size="icon"
               className="h-7 w-7"
-              title="Provision new agent"
+              aria-label="Provision new agent"
             >
               <Plus size={16} />
             </Button>
@@ -143,15 +182,17 @@ export function AgentsManager() {
         <ScrollArea className="flex-1">
           <div className="p-2 space-y-1">
             {agents.map((a) => (
-              <div
+              <button
                 key={a.id}
+                type="button"
                 onClick={() => setSelectedId(a.id)}
                 className={cn(
-                  "p-3 rounded border transition-all cursor-pointer group flex items-start gap-3",
+                  "w-full p-3 rounded border transition-all cursor-pointer group flex items-start gap-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
                   selectedId === a.id
                     ? "bg-primary/5 border-primary/20"
                     : "bg-background border-transparent hover:bg-muted/50",
                 )}
+                aria-label={`Select agent ${a.name}`}
               >
                 <Avatar className="h-8 w-8 border shrink-0">
                   <AvatarFallback className="text-[10px] font-bold bg-muted">
@@ -174,7 +215,7 @@ export function AgentsManager() {
                     {a.role}
                   </p>
                 </div>
-              </div>
+              </button>
             ))}
           </div>
         </ScrollArea>
@@ -215,19 +256,21 @@ export function AgentsManager() {
                 <p className="text-[7px] font-bold uppercase opacity-40">
                   Latency
                 </p>
-                <p className="text-[10px] font-bold">142ms</p>
+                <p className="text-[10px] font-bold">{stats.latency}ms</p>
               </div>
               <div className="p-2 rounded border bg-muted/20 text-center">
                 <p className="text-[7px] font-bold uppercase opacity-40">
                   Reliability
                 </p>
-                <p className="text-[10px] font-bold text-emerald-500">98%</p>
+                <p className="text-[10px] font-bold text-emerald-500">
+                  {stats.reliability}%
+                </p>
               </div>
               <div className="p-2 rounded border bg-muted/20 text-center">
                 <p className="text-[7px] font-bold uppercase opacity-40">
                   Load
                 </p>
-                <p className="text-[10px] font-bold">4.2%</p>
+                <p className="text-[10px] font-bold">{stats.load}%</p>
               </div>
             </div>
           </Card>
@@ -242,7 +285,7 @@ export function AgentsManager() {
             <div className="grid grid-cols-4 gap-2">
               {TOOLS.map((t) => (
                 <div
-                  key={t.id}
+                  key={`tool-${t.id}`}
                   className={cn(
                     "p-2 rounded border flex flex-col items-center gap-1 opacity-40",
                     activeAgent?.tools.includes(t.id) &&
@@ -273,46 +316,83 @@ export function AgentsManager() {
               </span>
             </div>
           </div>
-
-          <div className="flex-1 p-4 relative">
-            <textarea
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              placeholder={`Transmit goal to ${activeAgent?.name.toUpperCase()}...`}
-              className="w-full h-full bg-transparent outline-none resize-none text-xs font-medium placeholder:opacity-20"
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  handleExecute();
-                }
-              }}
-            />
-            <div className="absolute bottom-4 right-4 flex items-center gap-2">
-              <Button
-                size="sm"
-                className="h-9 px-6 font-bold uppercase text-[9px] shadow-sm"
-                onClick={handleExecute}
-                disabled={!prompt.trim() || isExecuting}
-              >
-                {isExecuting ? (
-                  <RefreshCw size={12} className="animate-spin mr-2" />
-                ) : (
-                  <Zap size={12} className="mr-2" />
+          "p-3 rounded border transition-all cursor-pointer group flex
+          items-start gap-3",{" "}
+          <div className="flex-1 p-4 relative flex flex-col gap-4">
+            <ScrollArea className="flex-1 border-b pb-4">
+              <div className="space-y-4">
+                {activeAgent?.history?.map((msg, i) => (
+                  <div
+                    key={`${msg.role}-${msg.timestamp}-${i}`}
+                    className={cn(
+                      "p-3 rounded-lg text-xs font-medium",
+                      msg.role === "user"
+                        ? "bg-primary/10 border ml-8"
+                        : "bg-muted border mr-8",
+                    )}
+                  >
+                    <p className="font-bold uppercase text-[8px] opacity-40 mb-1">
+                      {msg.role === "user" ? "Command" : activeAgent.name}
+                    </p>
+                    {msg.content}
+                  </div>
+                ))}
+                {activeAgent?.history?.length === 0 && (
+                  <div className="h-full flex items-center justify-center opacity-20 uppercase font-black text-[10px] tracking-widest pt-10">
+                    Awaiting Instruction
+                  </div>
                 )}
-                Execute Task
-              </Button>
+              </div>
+            </ScrollArea>
+            <div className="h-24 relative">
+              <textarea
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                placeholder={`Transmit goal to ${activeAgent?.name.toUpperCase()}...`}
+                className="w-full h-full bg-transparent outline-none resize-none text-xs font-medium placeholder:opacity-20"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleExecute();
+                  }
+                }}
+                aria-label="Agent command input"
+              />
+              <div className="absolute bottom-0 right-0 flex items-center gap-2">
+                <Button
+                  size="sm"
+                  className="h-8 px-4 font-bold uppercase text-[8px] shadow-sm"
+                  onClick={handleExecute}
+                  disabled={!prompt.trim() || isExecuting}
+                  aria-label="Execute command"
+                >
+                  {isExecuting ? (
+                    <RefreshCw size={10} className="animate-spin mr-2" />
+                  ) : (
+                    <Zap size={10} className="mr-2" />
+                  )}
+                  Execute
+                </Button>
+              </div>
             </div>
           </div>
         </Card>
 
-        <Card className="h-[120px] border bg-zinc-950 p-4 font-mono text-[10px] text-emerald-500/60 leading-relaxed overflow-hidden">
-          <p>[SYSTEM] Neural fleet v4.2 online.</p>
-          {isExecuting && (
-            <p className="text-blue-400 animate-pulse">
-              [INFO] {activeAgent?.name} executing instruction set...
-            </p>
-          )}
-          <p className="opacity-20">[IDLE] Connected to global orchestrator.</p>
+        <Card className="h-30 border bg-zinc-950 p-4 font-mono text-[10px] text-emerald-500/60 leading-relaxed overflow-hidden">
+          <ScrollArea className="h-full">
+            {logs.map((log, i) => (
+              <p
+                key={log}
+                className={cn(
+                  log.includes("[ERROR]") && "text-rose-500",
+                  log.includes("[SUCCESS]") && "text-emerald-400",
+                  log.includes("[EXEC]") && "text-blue-400",
+                )}
+              >
+                {log}
+              </p>
+            ))}
+          </ScrollArea>
         </Card>
       </div>
     </div>
