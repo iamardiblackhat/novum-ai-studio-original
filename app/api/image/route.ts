@@ -18,8 +18,8 @@ export async function POST(req: NextRequest) {
       height = 1024,
       apiKeys = {},
     } = await req.json();
-    if (!prompt || prompt.trim().length < 3)
-      return Response.json({ error: "Valid prompt required" }, { status: 400 });
+    if (!prompt || prompt.trim().length < 1)
+      return Response.json({ error: "Prompt required" }, { status: 400 });
 
     // 1. OpenAI (DALL-E)
     const openaiKey = isValidKey(apiKeys.openai || process.env.OPENAI_API_KEY)

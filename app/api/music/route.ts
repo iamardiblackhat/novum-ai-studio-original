@@ -10,11 +10,8 @@ function isValidKey(key: string | undefined): boolean {
 export async function POST(req: NextRequest) {
   try {
     const { prompt, duration = 30, model = "pollinations-music", apiKeys = {} } = await req.json();
-    if (!prompt || prompt.trim().length < 3)
-      return Response.json(
-        { error: "A valid prompt is required" },
-        { status: 400 },
-      );
+    if (!prompt || prompt.trim().length < 1)
+      return Response.json({ error: "Prompt required" }, { status: 400 });
 
     const replicateKey = isValidKey(
       apiKeys.replicate || process.env.REPLICATE_API_KEY,

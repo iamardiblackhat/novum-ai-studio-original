@@ -238,10 +238,10 @@ export function ChatInterface({
         }),
       });
 
-      if (!res.ok) throw new Error(`Status ${res.status}`);
-
       const data = await res.json();
-      if (data.error) throw new Error(data.error);
+      if (!res.ok || data.error) {
+        throw new Error(data.error || `Status ${res.status}`);
+      }
 
       if (onResponse) onResponse(data);
 

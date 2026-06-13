@@ -15,8 +15,8 @@ export async function POST(req: NextRequest) {
       duration = 4,
       apiKeys = {},
     } = await req.json();
-    if (!prompt || prompt.trim().length < 3)
-      return Response.json({ error: "Valid prompt required" }, { status: 400 });
+    if (!prompt || prompt.trim().length < 1)
+      return Response.json({ error: "Prompt required" }, { status: 400 });
 
     // 1. Replicate (if key provided - supports free tier / credits)
     const replicateKey = isValidKey(
