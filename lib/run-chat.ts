@@ -23,7 +23,7 @@ export async function runChatStream({
   let effectiveKeys = { ...apiKeys };
   if (typeof window !== "undefined" && Object.keys(effectiveKeys).length === 0) {
     try {
-      const stored = localStorage.getItem("novum-api-keys");
+      const stored = localStorage.getItem("omnelia-api-keys") || localStorage.getItem("novum-api-keys");
       if (stored) {
         effectiveKeys = JSON.parse(stored);
       }

@@ -11,39 +11,42 @@ interface MobileHeaderProps {
 }
 
 const sectionTitles: Record<string, string> = {
-  "web-builder": "Web Builder",
+  dashboard: "Studio Command",
+  "web-builder": "Web Architect",
   "cartoon-gen": "Cartoon Episodes",
   podcast: "Podcast Studio",
-  "video-gen": "Video Generation",
-  "image-gen": "Image Generation",
-  "voice-clone": "Voice Cloning",
-  "music-gen": "Music Studio",
+  "video-gen": "Wan 2.1 Video",
+  "image-gen": "FLUX.2 Diffuser",
+  "voice-clone": "Kokoro-82M Voice",
+  "music-gen": "MusicGen Studio",
+  "documentary-montage": "Rain Documentary",
   "video-edit": "Video Editor",
-  agents: "Agent Fleet",
-  workflows: "Logic Flows",
-  autonomous: "Autonomous",
-  automations: "AI Automations",
+  "ardi-sec": "ARDI Cybersecurity",
+  agents: "Omnelia Fleet",
+  workflows: "Workflows",
+  autonomous: "Autonomous Tasks",
+  automations: "Event Automations",
   templates: "Blueprints",
-  themes: "Aesthetics",
-  layouts: "Architecture",
+  themes: "Themes",
+  layouts: "Layouts",
 };
 
 export function MobileHeader({ activeSection }: MobileHeaderProps) {
   return (
-    <header className="flex md:hidden h-16 shrink-0 items-center justify-between border-b bg-background/80 backdrop-blur-xl sticky top-0 z-50 px-4 transition-all duration-300">
+    <header className="flex md:hidden h-16 shrink-0 items-center justify-between border-b border-[rgba(87,241,239,0.15)] bg-[#090b11]/90 backdrop-blur-xl sticky top-0 z-50 px-4 transition-all duration-300">
       <div className="flex items-center gap-3">
-        <SidebarTrigger className="h-10 w-10 rounded-xl bg-primary/5 hover:bg-primary/10 border-2 border-primary/5 transition-all active:scale-95">
-          <Menu className="h-5 w-5 text-primary" />
+        <SidebarTrigger className="h-10 w-10 rounded-xl bg-[rgba(87,241,239,0.1)] hover:bg-[rgba(87,241,239,0.2)] border border-[rgba(87,241,239,0.25)] transition-all active:scale-95 text-[#57f1ef]">
+          <Menu className="h-5 w-5 text-[#57f1ef]" />
         </SidebarTrigger>
         <div className="flex flex-col">
           <div className="flex items-center gap-1.5">
-            <span className="text-sm font-black tracking-tight uppercase leading-none">
-              {sectionTitles[activeSection]}
+            <span className="text-sm font-black tracking-tight uppercase leading-none text-foreground">
+              {sectionTitles[activeSection] || "Command"}
             </span>
-            <div className="h-1 w-1 rounded-full bg-primary animate-pulse" />
+            <div className="h-1.5 w-1.5 rounded-full bg-[#57f1ef] animate-pulse" />
           </div>
-          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest leading-none mt-0.5">
-            Novum Studio
+          <span className="text-[10px] font-mono font-bold text-[#57f1ef] uppercase tracking-widest leading-none mt-0.5">
+            Omnelia SI
           </span>
         </div>
       </div>

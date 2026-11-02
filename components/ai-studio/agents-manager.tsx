@@ -26,7 +26,7 @@ interface Agent {
   id: string;
   name: string;
   role: string;
-  framework: "Mastra" | "LangGraph" | "CrewAI" | "AutoGen";
+  framework: "ARDI Core" | "Mastra" | "LangGraph" | "CrewAI" | "Smolagents";
   status: "active" | "idle" | "executing";
   tasks: number;
   tools: string[];
@@ -40,9 +40,19 @@ interface Agent {
 
 const PRESETS: Agent[] = [
   {
+    id: "a0",
+    name: "ARDI Sec",
+    role: "Defensive Cyber & Perimeter Guardian",
+    framework: "ARDI Core",
+    status: "active",
+    tasks: 412,
+    tools: ["osint", "defense", "isolation"],
+    avatar: "A",
+  },
+  {
     id: "a1",
     name: "Newton",
-    role: "Lead Researcher",
+    role: "Lead Deep-Researcher",
     framework: "LangGraph",
     status: "idle",
     tasks: 124,
@@ -52,7 +62,7 @@ const PRESETS: Agent[] = [
   {
     id: "a2",
     name: "Cipher",
-    role: "Senior Architect",
+    role: "Senior System Architect",
     framework: "Mastra",
     status: "idle",
     tasks: 89,
@@ -62,7 +72,7 @@ const PRESETS: Agent[] = [
   {
     id: "a3",
     name: "Vanguard",
-    role: "Growth Specialist",
+    role: "Operations Coordinator",
     framework: "CrewAI",
     status: "idle",
     tasks: 215,

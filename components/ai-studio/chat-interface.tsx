@@ -115,7 +115,7 @@ export function ChatInterface({
 
   // Load keys from local storage on mount
   useEffect(() => {
-    const stored = localStorage.getItem("novum-api-keys");
+    const stored = localStorage.getItem("omnelia-api-keys") || localStorage.getItem("novum-api-keys");
     if (stored) {
       try {
         setApiKeys(JSON.parse(stored));
@@ -127,6 +127,7 @@ export function ChatInterface({
 
   // Save keys to local storage when they change
   useEffect(() => {
+    localStorage.setItem("omnelia-api-keys", JSON.stringify(apiKeys));
     localStorage.setItem("novum-api-keys", JSON.stringify(apiKeys));
   }, [apiKeys]);
 
