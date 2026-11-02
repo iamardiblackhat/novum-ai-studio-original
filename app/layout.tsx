@@ -50,9 +50,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark bg-[#090b11] text-[#f3f4f8]">
+    <html lang="en" className="dark bg-[#090b11] text-[#f3f4f8]" suppressHydrationWarning>
       <body
         className={`${geist.variable} ${geistMono.variable} font-sans antialiased bg-[#090b11] text-[#f3f4f8] selection:bg-[#57f1ef]/20 selection:text-[#57f1ef]`}
+        suppressHydrationWarning
       >
         {children}
         {process.env.NODE_ENV === "production" && <Analytics />}
