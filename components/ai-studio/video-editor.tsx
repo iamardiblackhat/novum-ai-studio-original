@@ -72,7 +72,7 @@ export function VideoEditor() {
         <div className="flex-[1.5] flex flex-col gap-4 min-w-0">
           <Card className="flex-1 relative rounded border bg-black shadow-sm group overflow-hidden flex items-center justify-center">
             <video className="max-h-full max-w-full object-contain">
-              <track kind="captions" src="" label="English" default />
+              
             </video>
 
             <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between">

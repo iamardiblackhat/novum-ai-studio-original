@@ -82,16 +82,11 @@ const sectionCategories: Record<string, string> = {
 };
 
 export default function AIStudio() {
-  const [activeSection, setActiveSection] = useState(() => {
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
-      const sec = params.get("section") || window.location.hash.replace("#", "");
-      if (sec && sectionTitles[sec]) return sec;
-    }
-    return "dashboard";
-  });
+  const [activeSection, setActiveSection] = useState("dashboard");
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
       const sec = params.get("section") || window.location.hash.replace("#", "");

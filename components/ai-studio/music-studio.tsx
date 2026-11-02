@@ -98,7 +98,7 @@ export function MusicStudio() {
     >
       <div className="flex flex-col h-full gap-4">
         <audio ref={audioRef} onEnded={() => setIsPlaying(false)}>
-          <track kind="captions" src="" label="English" default />
+          
         </audio>
 
         {/* Main Monitor */}

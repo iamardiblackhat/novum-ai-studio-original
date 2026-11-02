@@ -325,7 +325,7 @@ export function DocumentaryMontage() {
                 muted
                 playsInline
               >
-                <track kind="captions" src="" label="English" default />
+                
               </video>
             ) : (
               <div className="flex flex-col items-center gap-3 opacity-30 p-8 text-center">

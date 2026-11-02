@@ -134,7 +134,7 @@ export function VideoGenerator() {
                     controls
                     className="w-full h-full object-cover"
                   >
-                    <track kind="captions" src="" label="English" default />
+                    
                   </video>
                   <div className="absolute top-2 left-2 right-2 flex items-center justify-between pointer-events-none transition-opacity group-hover:opacity-0">
                     <Badge className="bg-black/60 text-white border-white/10 text-[8px] font-bold uppercase">

@@ -108,7 +108,7 @@ export function CartoonEpisodeGenerator() {
               onEnded={() => setIsPlaying(false)}
               src={activeScene.url}
             >
-              <track kind="captions" src="" label="English" default />
+              
             </video>
           ) : (
             <div className="h-full w-full flex flex-col items-center justify-center opacity-20">
