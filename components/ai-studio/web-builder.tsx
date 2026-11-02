@@ -17,12 +17,13 @@ import { ChatInterface, Model } from "./chat-interface";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const webModels: Model[] = [
-  // Real OpenRouter models (require key for access; free tiers available on some via :free suffix)
-  { id: "qwen/qwen-3.5-72b-chat", name: "Qwen 3.5 72B", provider: "openrouter", badge: "Elite", requiresKey: true },
-  { id: "openai/gpt-5-turbo", name: "GPT-5 Turbo", provider: "openrouter", badge: "Fast", requiresKey: true },
-  { id: "anthropic/claude-4-sonnet", name: "Claude 4 Sonnet", provider: "openrouter", badge: "Pro", requiresKey: true },
-  // Prefer free tiers when key present
-  { id: "google/gemma-4-26b-a4b-it:free", name: "Gemma 4 26B (Free Tier)", provider: "openrouter", badge: "Free", requiresKey: true },
+  // Free out-of-the-box neural coding engines
+  { id: "qwen-coder", name: "Qwen 2.5 Coder (Free OSS)", provider: "pollinations", badge: "Free" },
+  { id: "ollama-local", name: "Local Sovereign Ollama", provider: "ollama", badge: "Local" },
+  // OpenRouter models (require key)
+  { id: "qwen/qwen-2.5-coder-32b-instruct", name: "Qwen 2.5 Coder 32B", provider: "openrouter", badge: "Elite", requiresKey: true },
+  { id: "openai/gpt-4o", name: "GPT-4o", provider: "openrouter", badge: "Pro", requiresKey: true },
+  { id: "anthropic/claude-3.5-sonnet", name: "Claude 3.5 Sonnet", provider: "openrouter", badge: "Pro", requiresKey: true },
 ];
 
 type Viewport = "desktop" | "tablet" | "mobile";
@@ -41,7 +42,7 @@ export function WebBuilder() {
   return (
     <ChatInterface
       models={webModels}
-      defaultModel="qwen/qwen-3.5-72b-chat"
+      defaultModel="qwen-coder"
       placeholder="Describe the web architecture to forge..."
       welcomeTitle="Web Engineering Forge"
       welcomeDescription="Production-grade semantic codebase generation for modern web architectures."

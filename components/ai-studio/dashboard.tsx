@@ -132,8 +132,8 @@ export function StudioDashboard({ onNavigate }: DashboardProps) {
           }),
         });
         const data = await res.json();
-        const content = data.choices?.[0]?.message?.content || data.reply || JSON.stringify(data);
-        setLastResult({ type: "security", text: content, model: "ARDI Sec Boundary Gate" });
+        const content = data.content || data.choices?.[0]?.message?.content || data.reply || JSON.stringify(data);
+        setLastResult({ type: "security", text: content, model: data.modelUsed || "ARDI Sec Boundary Gate" });
         toast.success("ARDI Sec perimeter audit complete!");
       } else if (quickMode === "agent") {
         toast.info("Dispatching Omnelia Autonomous Lead Agent...");
@@ -153,8 +153,8 @@ export function StudioDashboard({ onNavigate }: DashboardProps) {
           }),
         });
         const data = await res.json();
-        const content = data.choices?.[0]?.message?.content || data.reply || JSON.stringify(data);
-        setLastResult({ type: "agent", text: content, model: "Omnelia Coordinator" });
+        const content = data.content || data.choices?.[0]?.message?.content || data.reply || JSON.stringify(data);
+        setLastResult({ type: "agent", text: content, model: data.modelUsed || "Omnelia Coordinator" });
         toast.success("Autonomous task coordinated!");
       }
     } catch (err: any) {
