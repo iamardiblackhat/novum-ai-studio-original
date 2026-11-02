@@ -346,13 +346,13 @@ export function ChatInterface({
                 <p className="text-xs text-muted-foreground mt-1">
                   {welcomeDescription}
                 </p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-6 max-w-md mx-auto px-4">
+                <div className="flex flex-col gap-2 mt-6 max-w-lg mx-auto px-4">
                   {suggestedPrompts.map((p) => (
                     <Button
                       key={`prompt-${p.substring(0, 10)}`}
                       variant="outline"
                       size="sm"
-                      className="text-[10px] font-medium justify-start h-auto py-2 px-3"
+                      className="text-[11px] font-medium justify-start h-auto py-2.5 px-3.5 whitespace-normal text-left leading-snug border-[rgba(87,241,239,0.2)] hover:border-[#57f1ef]/50 hover:bg-[rgba(87,241,239,0.06)]"
                       onClick={() => setInput(p)}
                     >
                       {p}

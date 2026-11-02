@@ -49,6 +49,7 @@ interface AppSidebarProps {
 const commandItems = [
   { id: "dashboard", title: "Studio Dashboard", icon: LayoutDashboard, badge: "Main" },
   { id: "content-engine", title: "AI Command Chat", icon: PenTool },
+  { id: "prompt-enhancer", title: "Prompt Optimizer", icon: Sparkles },
 ];
 
 const createItems = [

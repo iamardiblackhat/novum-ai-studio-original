@@ -27,6 +27,7 @@ import { CartoonEpisodeGenerator } from "@/components/ai-studio/cartoon-episode-
 import { PodcastStudio } from "@/components/ai-studio/podcast-studio";
 import { AutomationsBuilder } from "@/components/ai-studio/automations-builder";
 import { PromptEnhancer } from "@/components/ai-studio/prompt-enhancer";
+import { CommandChat } from "@/components/ai-studio/command-chat";
 import { Separator } from "@/components/ui/separator";
 import {
   Breadcrumb,
@@ -40,6 +41,7 @@ import { Badge } from "@/components/ui/badge";
 const sectionTitles: Record<string, string> = {
   dashboard: "Omnelia SI Studio Dashboard",
   "content-engine": "AI Command Console",
+  "prompt-enhancer": "Prompt & Vector Optimizer",
   "image-gen": "FLUX.2 Image Diffuser",
   "video-gen": "Wan 2.1 Video Studio",
   "voice-clone": "Kokoro-82M Voice Studio",
@@ -62,6 +64,7 @@ const sectionTitles: Record<string, string> = {
 const sectionCategories: Record<string, string> = {
   dashboard: "Command",
   "content-engine": "Command",
+  "prompt-enhancer": "Command",
   "image-gen": "Creative Studio",
   "video-gen": "Creative Studio",
   "voice-clone": "Creative Studio",
@@ -138,6 +141,8 @@ export function StudioApp() {
       case "automations":
         return <AutomationsBuilder />;
       case "content-engine":
+        return <CommandChat />;
+      case "prompt-enhancer":
         return <PromptEnhancer />;
       case "templates":
         return <TemplatesLibrary />;
