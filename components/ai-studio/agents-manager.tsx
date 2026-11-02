@@ -326,8 +326,6 @@ export function AgentsManager() {
               </span>
             </div>
           </div>
-          "p-3 rounded border transition-all cursor-pointer group flex
-          items-start gap-3",{" "}
           <div className="flex-1 p-4 relative flex flex-col gap-4">
             <ScrollArea className="flex-1 border-b pb-4">
               <div className="space-y-4">
