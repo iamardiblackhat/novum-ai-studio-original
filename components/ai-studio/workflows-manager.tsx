@@ -148,10 +148,17 @@ export function WorkflowsManager() {
         <ScrollArea className="flex-1">
           <div className="p-2 space-y-1">
             {workflows.map((w) => (
-              <button
+              <div
                 key={w.id}
-                type="button"
+                role="button"
+                tabIndex={0}
                 onClick={() => setSelectedId(w.id)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setSelectedId(w.id);
+                  }
+                }}
                 className={cn(
                   "w-full p-4 rounded border transition-all cursor-pointer group flex items-start justify-between gap-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
                   selectedId === w.id
@@ -187,7 +194,7 @@ export function WorkflowsManager() {
                 >
                   <Play size={12} fill="currentColor" />
                 </Button>
-              </button>
+              </div>
             ))}
           </div>
         </ScrollArea>

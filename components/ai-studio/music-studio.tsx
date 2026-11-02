@@ -287,15 +287,27 @@ export function MusicStudio() {
             ) : (
               <div className="p-2 space-y-1">
                 {tracks.map((t) => (
-                  <button
+                  <div
                     key={t.id}
-                    type="button"
+                    role="button"
+                    tabIndex={0}
                     onClick={() => {
                       setCurrentTrack(t);
                       setIsPlaying(true);
                       if (audioRef.current) {
                         audioRef.current.src = t.url;
                         audioRef.current.play();
+                      }
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        setCurrentTrack(t);
+                        setIsPlaying(true);
+                        if (audioRef.current) {
+                          audioRef.current.src = t.url;
+                          audioRef.current.play();
+                        }
                       }
                     }}
                     className={cn(
@@ -351,7 +363,7 @@ export function MusicStudio() {
                         <Trash2 size={12} />
                       </Button>
                     </div>
-                  </button>
+                  </div>
                 ))}
               </div>
             )}

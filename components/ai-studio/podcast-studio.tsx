@@ -229,10 +229,17 @@ export function PodcastStudio() {
               {segments.map((seg) => {
                 const speaker = speakers.find((s) => s.id === seg.speakerId);
                 return (
-                  <button
+                  <div
                     key={seg.id}
-                    type="button"
+                    role="button"
+                    tabIndex={0}
                     onClick={() => setActiveSegmentId(seg.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        setActiveSegmentId(seg.id);
+                      }
+                    }}
                     className={cn(
                       "w-full p-3 rounded border transition-all cursor-pointer group flex gap-3 text-left",
                       activeSegmentId === seg.id
@@ -271,7 +278,7 @@ export function PodcastStudio() {
                         <Download size={12} />
                       </Button>
                     </div>
-                  </button>
+                  </div>
                 );
               })}
             </div>

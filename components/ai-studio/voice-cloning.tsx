@@ -210,15 +210,27 @@ export function VoiceCloning() {
             ) : (
               <div className="p-2 space-y-1">
                 {audioClips.map((clip) => (
-                  <button
+                  <div
                     key={clip.id}
-                    type="button"
+                    role="button"
+                    tabIndex={0}
                     onClick={() => {
                       setCurrentAudio(clip);
                       setIsPlaying(true);
                       if (audioRef.current) {
                         audioRef.current.src = clip.url;
                         audioRef.current.play();
+                      }
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        setCurrentAudio(clip);
+                        setIsPlaying(true);
+                        if (audioRef.current) {
+                          audioRef.current.src = clip.url;
+                          audioRef.current.play();
+                        }
                       }
                     }}
                     className={cn(
@@ -273,7 +285,7 @@ export function VoiceCloning() {
                         <Trash2 size={12} />
                       </Button>
                     </div>
-                  </button>
+                  </div>
                 ))}
               </div>
             )}
