@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   SidebarProvider,
   SidebarInset,
@@ -82,12 +82,38 @@ const sectionCategories: Record<string, string> = {
 };
 
 export default function AIStudio() {
-  const [activeSection, setActiveSection] = useState("dashboard");
+  const [activeSection, setActiveSection] = useState(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const sec = params.get("section") || window.location.hash.replace("#", "");
+      if (sec && sectionTitles[sec]) return sec;
+    }
+    return "dashboard";
+  });
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const sec = params.get("section") || window.location.hash.replace("#", "");
+      if (sec && sectionTitles[sec]) {
+        setActiveSection(sec);
+      }
+    }
+  }, []);
+
+  const handleSectionChange = (section: string) => {
+    setActiveSection(section);
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      url.searchParams.set("section", section);
+      window.history.replaceState(null, "", url.toString());
+    }
+  };
 
   const renderContent = () => {
     switch (activeSection) {
       case "dashboard":
-        return <StudioDashboard onNavigate={setActiveSection} />;
+        return <StudioDashboard onNavigate={handleSectionChange} />;
       case "monetization":
         return <MonetizationAgents />;
       case "image-gen":
@@ -134,7 +160,7 @@ export default function AIStudio() {
       <div className="flex h-screen w-full bg-background text-foreground antialiased selection:bg-primary/20 selection:text-primary">
         <AppSidebar
           activeSection={activeSection}
-          setActiveSection={setActiveSection}
+          setActiveSection={handleSectionChange}
         />
         <SidebarInset className="flex flex-col flex-1 overflow-hidden">
           {/* Top Navbar */}
