@@ -1,0 +1,19 @@
+/* Keep the header translucent without making it a containing block for the fixed menu. */
+.site-header{background:transparent!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;border-bottom:1px solid #e1d4ff2b;box-shadow:0 8px 32px #08061516}
+.site-header::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background:linear-gradient(120deg,#19132155,#11182538);backdrop-filter:blur(14px) saturate(145%);-webkit-backdrop-filter:blur(14px) saturate(145%);border-bottom:1px solid #ffffff0d}
+.site-nav{background:linear-gradient(135deg,#1c142973,#101c296b)!important;backdrop-filter:blur(12px) saturate(135%);-webkit-backdrop-filter:blur(12px) saturate(135%);border-top:1px solid #e7dcff26}
+.site-nav.is-open{display:grid!important;grid-template-columns:minmax(250px,430px) minmax(280px,600px);gap:clamp(30px,5vw,70px);padding:clamp(20px,4vh,40px) max(30px,8vw);align-content:center;align-items:center;justify-content:center}
+.nav-brand-scene{min-height:0;height:min(570px,calc(100svh - 170px));align-self:center;background:linear-gradient(145deg,#ffffff12,#af8aff09 55%,#69dce80a);border:1px solid #e5d4ff40;box-shadow:inset 0 1px 0 #ffffff2b,0 18px 50px #08051426;backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px)}
+.nav-brand-scene>img{width:100%;height:100%;max-height:none;object-fit:contain;padding:12px 12px 88px}
+.nav-brand-scene>span{padding:16px 22px;background:linear-gradient(120deg,#1b14244f,#14212b3d);border-top:1px solid #e7dcff2e;backdrop-filter:blur(10px) saturate(140%);-webkit-backdrop-filter:blur(10px) saturate(140%)}
+.nav-links>a{font-size:clamp(23px,min(3.4vw,5.3vh),50px);padding:clamp(7px,1.2vh,15px) 0;min-height:44px;border-bottom-color:#e0d2f02b;text-shadow:0 2px 14px #09061280}
+@media(max-width:767px){
+ .site-nav.is-open{display:flex!important;flex-direction:column;align-items:stretch;justify-content:flex-start;gap:12px;padding:14px 18px 22px}
+ .nav-brand-scene{display:grid;grid-template-columns:86px 1fr;align-self:stretch;align-items:center;height:120px;min-height:120px;flex-shrink:0}
+ .nav-brand-scene>img{width:86px;height:120px;padding:5px;object-fit:contain}
+ .nav-brand-scene>span{position:static;padding:12px;background:linear-gradient(120deg,#ffffff0a,#af8aff08);border:0;border-left:1px solid #e7dcff20;border-radius:0 14px 14px 0;align-self:stretch;display:flex;flex-direction:column;justify-content:center}
+ .nav-brand-scene small{font-size:23px}
+ .nav-links>a{font-size:24px;min-height:46px;padding:9px 0}
+}
+@media(max-height:600px) and (min-width:768px){.site-nav.is-open{align-content:start;gap:30px;padding-block:20px}.nav-brand-scene{height:calc(100svh - 132px)}.nav-brand-scene>img{padding-bottom:76px}.nav-brand-scene small{font-size:22px}.nav-brand-scene>span{padding:12px 18px}.nav-links{gap:0}.nav-links>a{font-size:23px;padding:7px 0}}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){.site-header::before{background:#171121b8}.site-nav{background:#141321e8!important}.nav-brand-scene>span{background:#171421c9}}

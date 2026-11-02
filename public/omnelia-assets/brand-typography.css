@@ -1,0 +1,8 @@
+/* Shared italic serif treatment, shared by all visible brand mentions. */
+:root{--brand-omnelia:#c7a0ff;--brand-si:#57f1ef;--brand-creative:#ffadd7}
+body .brand-token,body .brand-token *{font-family:Zodiak,Georgia,serif!important;font-weight:300!important;font-style:italic!important;color:var(--brand-word-color)!important;-webkit-text-fill-color:var(--brand-word-color)!important}
+body .brand-token{display:inline!important}
+.brand-token--omnelia{--brand-word-color:var(--brand-omnelia)}
+.brand-token--si{--brand-word-color:var(--brand-si)}
+.brand-token--creative{--brand-word-color:var(--brand-creative)}
+.nav-scene-label{font:inherit;letter-spacing:inherit}

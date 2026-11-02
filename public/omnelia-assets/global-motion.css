@@ -1,0 +1,24 @@
+/* Shared living surfaces: movement is tied to visibility on desktop and phones. */
+.live-art{position:relative;isolation:isolate}
+.live-card{position:relative;isolation:isolate;transition:translate .35s cubic-bezier(.22,1,.36,1),box-shadow .35s,border-color .35s}
+@media(prefers-reduced-motion:no-preference){
+ .generated-hero-art.live-art img,.match-about-art.live-art img,.generated-topic.live-art img{animation:studio-art-drift 12s ease-in-out infinite alternate;animation-delay:var(--motion-phase,0s);animation-play-state:paused;transform-origin:center}
+ .global-motion-in-view.generated-hero-art img,.global-motion-in-view.match-about-art img,.global-motion-in-view.generated-topic img{animation-play-state:running}
+ .generated-hero-art--mascot.live-art img,.match-about-art.live-art img[src*="mascot-"]{animation-name:studio-identity-light;animation-duration:8s}
+ .route-mascot-frame.live-art img,.route-family-art.live-art img{animation:studio-identity-light 8s ease-in-out infinite alternate;animation-play-state:paused}
+ .route-mascot-frame.global-motion-in-view img,.route-family-art.global-motion-in-view img{animation-play-state:running}
+ .route-family-art.live-art img:nth-child(even){animation-delay:-4s}
+ .live-art:not(img):after{content:"";position:absolute;inset:0;z-index:3;pointer-events:none;border-radius:inherit;background:linear-gradient(115deg,transparent 25%,#e8d5ff00 40%,#ffffff20 49%,#69dce81c 52%,transparent 65%);background-size:260% 100%;animation:studio-glass-pass 11s ease-in-out infinite;animation-delay:var(--motion-phase,0s);animation-play-state:paused;opacity:.7}
+ .global-motion-in-view.live-art:after{animation-play-state:running}
+ .route-hero.ambient-is-visible h1 em{background:linear-gradient(110deg,#dfcaff 10%,#af8aff 35%,#8ce7ed 60%,#efb6cb 80%,#dfcaff);background-size:240% 100%;background-clip:text;-webkit-background-clip:text;color:transparent;animation:studio-type-light 10s ease-in-out infinite alternate}
+ .live-card:after{content:"";position:absolute;inset:0;z-index:-1;border-radius:inherit;pointer-events:none;background:linear-gradient(110deg,#af8aff00 15%,#af8aff0c 35%,#69dce812 53%,#efb6cb0b 68%,#af8aff00 85%);background-size:250% 100%;animation:studio-glass-pass 12s ease-in-out infinite;animation-delay:var(--motion-phase,0s);animation-play-state:paused}
+ .global-motion-in-view.live-card:after{animation-play-state:running}
+ .live-card:focus-within{border-color:#ae8bd1;box-shadow:0 10px 28px #6d46871f}
+ .live-card:active{translate:0 1px}
+ @media(hover:hover) and (pointer:fine){.live-card:hover{translate:0 -5px;border-color:#ae8bd1;box-shadow:0 16px 36px #6d468724}}
+}
+@keyframes studio-art-drift{from{scale:1;translate:0 0}to{scale:1.045;translate:0 -3px}}
+@keyframes studio-identity-light{from{filter:brightness(1) saturate(1)}to{filter:brightness(1.08) saturate(1.07)}}
+@keyframes studio-glass-pass{0%,12%{background-position:150% 0}72%,100%{background-position:-70% 0}}
+@keyframes studio-type-light{from{background-position:0 50%}to{background-position:100% 50%}}
+@media(prefers-reduced-motion:reduce){.live-art,.live-art img,.live-art:after,.live-card,.live-card:after{animation:none!important;transition:none!important;translate:none!important}.live-art:after,.live-card:after{display:none}.route-hero h1 em{animation:none!important}}
