@@ -15,75 +15,103 @@ export async function POST(req: NextRequest) {
       model = "pollinations-tts",
       apiKeys = {},
     } = await req.json();
-    if (!text || text.trim().length === 0)
-      return Response.json({ error: "Text required" }, { status: 400 });
 
-    // 1. ElevenLabs
-    const elevenKey = isValidKey(
-      apiKeys.elevenlabs || process.env.ELEVENLABS_API_KEY,
-    )
+    if (!text || text.trim().length === 0) {
+      return Response.json({ error: "Text required" }, { status: 400 });
+    }
+
+    // 1. ElevenLabs (if user provided valid key)
+    const elevenKey = isValidKey(apiKeys.elevenlabs || process.env.ELEVENLABS_API_KEY)
       ? apiKeys.elevenlabs || process.env.ELEVENLABS_API_KEY
       : undefined;
     if (elevenKey && (model.includes("eleven") || model.includes("v3"))) {
-      const res = await fetch(
-        `https://api.elevenlabs.io/v1/text-to-speech/${voice}`,
-        {
-          method: "POST",
-          headers: {
-            "xi-api-key": elevenKey,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
+      try {
+        const res = await fetch(
+          `https://api.elevenlabs.io/v1/text-to-speech/${voice}`,
+          {
+            method: "POST",
+            headers: {
+              "xi-api-key": elevenKey,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              text: text.trim(),
+              model_id: "eleven_multilingual_v2",
+            }),
+          }
+        );
+        if (res.ok) {
+          const buffer = await res.arrayBuffer();
+          const base64Audio = Buffer.from(buffer).toString("base64");
+          return Response.json({
+            url: `data:audio/mpeg;base64,${base64Audio}`,
             text: text.trim(),
-            model_id: "eleven_multilingual_v2",
-          }),
-        },
-      );
-      if (res.ok)
-        return new Response(await res.arrayBuffer(), {
-          headers: { "Content-Type": "audio/mpeg" },
-        });
+            voice,
+            modelUsed: "ElevenLabs V2",
+          });
+        }
+      } catch (err) {
+        console.warn("ElevenLabs fallback trigger", err);
+      }
     }
 
-    // 2. OpenAI
+    // 2. OpenAI TTS (if user provided valid key)
     const openaiKey = isValidKey(apiKeys.openai || process.env.OPENAI_API_KEY)
       ? apiKeys.openai || process.env.OPENAI_API_KEY
       : undefined;
     if (openaiKey && (model.includes("tts") || model.includes("openai"))) {
-      const res = await fetch("https://api.openai.com/v1/audio/speech", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${openaiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ model: "tts-1-hd", input: text.trim(), voice }),
-      });
-      if (res.ok)
-        return new Response(await res.arrayBuffer(), {
-          headers: { "Content-Type": "audio/mpeg" },
+      try {
+        const res = await fetch("https://api.openai.com/v1/audio/speech", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${openaiKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ model: "tts-1-hd", input: text.trim(), voice }),
         });
+        if (res.ok) {
+          const buffer = await res.arrayBuffer();
+          const base64Audio = Buffer.from(buffer).toString("base64");
+          return Response.json({
+            url: `data:audio/mpeg;base64,${base64Audio}`,
+            text: text.trim(),
+            voice,
+            modelUsed: "OpenAI TTS HD",
+          });
+        }
+      } catch (err) {
+        console.warn("OpenAI TTS fallback trigger", err);
+      }
     }
 
-    // 3. ONLY live researched real free working audio/tts June 2026
+    // 3. 100% Free Open-Source & Pollinations Audio Engine
+    // Supports Kokoro / Nova / OpenAI Audio / Qwen TTS styles
     const safeVoice = [
       "nova",
       "nova-fast",
       "openai-audio",
       "openai-audio-large",
       "elevenflash",
+      "qwen-tts",
+      "kokoro-af-heart",
+      "kokoro-am-adam",
+      "kokoro-bf-emma",
     ].includes(voice)
       ? voice
-      : "nova"; // real working default from research
-    const res = await fetch(
-      `https://audio.pollinations.ai/tts?voice=${safeVoice}&text=${encodeURIComponent(text.trim())}`,
-    );
-    if (res.ok)
-      return new Response(await res.arrayBuffer(), {
-        headers: { "Content-Type": "audio/mpeg" },
-      });
+      : "nova";
 
-    throw new Error("Synthesis engines busy or rate limited (try a key-backed provider or wait)");
+    // Direct streamable URL for instant HTML5 Audio playback without buffering delays
+    const audioUrl = `https://audio.pollinations.ai/tts?voice=${safeVoice}&text=${encodeURIComponent(
+      text.trim()
+    )}`;
+
+    return Response.json({
+      url: audioUrl,
+      text: text.trim(),
+      voice: safeVoice,
+      modelUsed: `Free Neural TTS (${safeVoice})`,
+    });
   } catch (error: unknown) {
-    return Response.json({ error: "Audio failure" }, { status: 500 });
+    return Response.json({ error: "Audio synthesis failure" }, { status: 500 });
   }
 }

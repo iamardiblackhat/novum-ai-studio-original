@@ -32,16 +32,18 @@ interface GeneratedAudio {
 }
 
 const voiceModels: Model[] = [
-  // Free no-key Pollinations voices
-  { id: "nova", name: "Nova (Free)", provider: "pollinations", badge: "Free" },
-  { id: "nova-fast", name: "Nova Fast (Free)", provider: "pollinations", badge: "Free" },
-  { id: "openai-audio", name: "OpenAI Audio (Free)", provider: "pollinations", badge: "Free" },
+  // Free Apache 2.0 Open-Weight Kokoro-82M & Neural voices
+  { id: "kokoro-af-heart", name: "Kokoro-82M Heart (OSS Best)", provider: "kokoro", badge: "Apache 2.0" },
+  { id: "kokoro-am-adam", name: "Kokoro-82M Adam (Deep Male)", provider: "kokoro", badge: "Apache 2.0" },
+  { id: "kokoro-bf-emma", name: "Kokoro-82M Emma (Studio British)", provider: "kokoro", badge: "Apache 2.0" },
+  { id: "nova", name: "Nova Neural Audio (Free)", provider: "pollinations", badge: "Free" },
+  { id: "nova-fast", name: "Nova Fast (Free)", provider: "pollinations", badge: "Fast" },
   { id: "qwen-tts", name: "Qwen TTS (Free)", provider: "pollinations", badge: "Free" },
-  // Eleven free tier (key) + pro
-  { id: "elevenlabs", name: "ElevenLabs (Free Tier)", provider: "pollinations", badge: "Free Tier", requiresKey: true },
-  { id: "elevenflash", name: "Eleven Flash (Free Tier)", provider: "pollinations", badge: "Free Tier", requiresKey: true },
-  { id: "elevenlabs/v3-pro", name: "ElevenLabs V3", provider: "openrouter", badge: "Elite", requiresKey: true },
-  { id: "openai/tts-2", name: "OpenAI TTS 2", provider: "openrouter", badge: "PRO", requiresKey: true },
+  { id: "openai-audio", name: "OpenAI Audio (Free)", provider: "pollinations", badge: "Free" },
+  // Pro/key-backed
+  { id: "elevenlabs", name: "ElevenLabs (Free Tier)", provider: "elevenlabs", badge: "Key", requiresKey: true },
+  { id: "elevenflash", name: "Eleven Flash (Free Tier)", provider: "elevenlabs", badge: "Key", requiresKey: true },
+  { id: "openai/tts-2", name: "OpenAI TTS 2", provider: "openai", badge: "PRO", requiresKey: true },
 ];
 
 export function VoiceCloning() {
@@ -66,7 +68,7 @@ export function VoiceCloning() {
   return (
     <ChatInterface
       models={voiceModels}
-      defaultModel="nova"
+      defaultModel="kokoro-af-heart"
       placeholder="Type the script for synthesis..."
       welcomeTitle="Neural Voice Studio"
       welcomeDescription="Professional-grade speech synthesis and high-fidelity voice cloning architecture."

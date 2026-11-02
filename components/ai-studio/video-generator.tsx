@@ -27,16 +27,16 @@ interface GeneratedVideo {
 }
 
 const videoModels: Model[] = [
-  // Pollinations free video (no key, real endpoints when available)
-  { id: "seedance-pro", name: "Seedance Pro (Free)", provider: "pollinations", badge: "Free" },
+  // Open-Source Video Models
+  { id: "wan", name: "Wan 2.1 (Alibaba Open Video)", provider: "pollinations", badge: "OSS Best" },
+  { id: "wan-fast", name: "Wan 2.1 Turbo (Fast 720p)", provider: "pollinations", badge: "Fast" },
+  { id: "wan-pro", name: "Wan 2.1 14B Cinema", provider: "pollinations", badge: "14B" },
+  { id: "ltx-2", name: "LTX-Video 2 (Lightricks Open)", provider: "pollinations", badge: "Real-time" },
+  { id: "seedance-pro", name: "Seedance Pro Video", provider: "pollinations", badge: "Fluid" },
   { id: "seedance-2.0", name: "Seedance 2.0 (Free)", provider: "pollinations", badge: "Free" },
-  { id: "wan", name: "Wan 2.5 (Free)", provider: "pollinations", badge: "Free" },
-  { id: "wan-pro", name: "Wan Pro (Free)", provider: "pollinations", badge: "Free" },
-  { id: "wan-fast", name: "Wan Fast (Free)", provider: "pollinations", badge: "Fast" },
-  { id: "ltx-2", name: "LTX Video 2 (Free)", provider: "pollinations", badge: "Free" },
   // Paid via key
+  { id: "replicate/wan2-1", name: "Wan 2.1 Full Precision", provider: "replicate", badge: "Pro", requiresKey: true },
   { id: "runway/gen-4", name: "Runway Gen-4", provider: "openrouter", badge: "PRO", requiresKey: true },
-  { id: "replicate/wan", name: "Replicate Wan (Free Credits)", provider: "replicate", badge: "Key", requiresKey: true },
 ];
 
 export function VideoGenerator() {
@@ -49,7 +49,7 @@ export function VideoGenerator() {
   return (
     <ChatInterface
       models={videoModels}
-      defaultModel="seedance-pro"
+      defaultModel="wan"
       placeholder="Describe the cinematic sequence..."
       welcomeTitle="Temporal Motion Engine"
       welcomeDescription="Production-grade video synthesis using next-gen temporal diffusers."
