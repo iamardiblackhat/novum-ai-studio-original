@@ -130,8 +130,9 @@ export function ImageGenerator() {
               {images.map((img) => (
                 <Dialog key={img.id}>
                   <DialogTrigger asChild>
-                    <button
-                      type="button"
+                    <div
+                      role="button"
+                      tabIndex={0}
                       className="relative aspect-square rounded border overflow-hidden cursor-zoom-in group shadow-sm text-left"
                       aria-label={`View ${img.prompt}`}
                     >
@@ -164,7 +165,7 @@ export function ImageGenerator() {
                           </Badge>
                         </div>
                       </div>
-                    </button>
+                    </div>
                   </DialogTrigger>
                   <DialogContent className="max-w-3xl p-0 border-0 bg-transparent shadow-none">
                     <DialogHeader className="hidden">

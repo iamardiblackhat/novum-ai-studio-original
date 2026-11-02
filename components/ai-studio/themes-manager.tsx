@@ -25,6 +25,26 @@ type Theme = {
 
 const THEMES: Theme[] = [
   {
+    id: "omnelia-obsidian",
+    name: "Omnelia Obsidian Cyan",
+    category: "Modern",
+    description: "Signature Framer-grade deep space aesthetic with cyan glow and electric accents.",
+    preview: {
+      bg: "#090b11",
+      sidebar: "#07090e",
+      card: "#0d111a",
+      accent: "#57f1ef",
+      text: "#f3f4f8",
+      border: "rgba(87, 241, 239, 0.2)",
+    },
+    vars: {
+      "--background": "228 30% 5%",
+      "--foreground": "228 10% 96%",
+      "--primary": "179 84% 64%",
+      "--sidebar": "228 35% 4%",
+    },
+  },
+  {
     id: "studio-light",
     name: "Studio Light",
     category: "Modern",
@@ -74,7 +94,7 @@ function applyTheme(theme: Theme) {
 }
 
 export function ThemesManager() {
-  const [active, setActive] = useState<string>("studio-dark"); // Much darker default for the entire studio (sinister, low-light, production dark aesthetic for the whole project cover)
+  const [active, setActive] = useState<string>("omnelia-obsidian");
   const [category, setCategory] = useState<"All" | "Modern" | "Retro" | "Playful" | "Artistic">("All");
 
   useEffect(() => {
