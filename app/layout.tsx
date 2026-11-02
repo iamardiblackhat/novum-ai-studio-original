@@ -13,31 +13,33 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AI Studio - Create with AI",
+  title: "Omnelia SI — Superintelligence & Creative Studio",
   description:
-    "Multi-purpose AI Studio for web apps, videos, images, voice, music, and autonomous agents",
-  generator: "v0.app",
+    "Omnelia SI internal superintelligence workstation: Wan 2.1 cinematic video, FLUX.2 diffusers, Kokoro-82M speech, ARDI defensive cyber, and persistent agent fleet.",
   icons: {
     icon: [
       {
-        url: "/icon-light-32x32.png",
-        media: "(prefers-color-scheme: light)",
+        url: "/branding/omnelia-icon-32.png",
+        sizes: "32x32",
+        type: "image/png",
       },
       {
-        url: "/icon-dark-32x32.png",
-        media: "(prefers-color-scheme: dark)",
+        url: "/branding/omnelia-icon-192.png",
+        sizes: "192x192",
+        type: "image/png",
       },
       {
-        url: "/icon.svg",
-        type: "image/svg+xml",
+        url: "/branding/omnelia-icon-512.png",
+        sizes: "512x512",
+        type: "image/png",
       },
     ],
-    apple: "/apple-icon.png",
+    apple: "/branding/omnelia-icon-180.png",
   },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#ffffff",
+  themeColor: "#090b11",
   width: "device-width",
   initialScale: 1,
 };
@@ -48,9 +50,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="bg-background">
+    <html lang="en" className="dark bg-[#090b11] text-[#f3f4f8]">
       <body
-        className={`${geist.variable} ${geistMono.variable} font-sans antialiased`}
+        className={`${geist.variable} ${geistMono.variable} font-sans antialiased bg-[#090b11] text-[#f3f4f8] selection:bg-[#57f1ef]/20 selection:text-[#57f1ef]`}
       >
         {children}
         {process.env.NODE_ENV === "production" && <Analytics />}

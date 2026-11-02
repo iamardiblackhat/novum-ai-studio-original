@@ -9,7 +9,7 @@ import {
 import { AppSidebar } from "@/components/ai-studio/app-sidebar";
 import { MobileHeader } from "@/components/ai-studio/mobile-header";
 import { StudioDashboard } from "@/components/ai-studio/dashboard";
-import { MonetizationAgents } from "@/components/ai-studio/monetization-agents";
+import { ArdiSecurity } from "@/components/ai-studio/ardi-security";
 import { WebBuilder } from "@/components/ai-studio/web-builder";
 import { ImageGenerator } from "@/components/ai-studio/image-generator";
 import { VideoGenerator } from "@/components/ai-studio/video-generator";
@@ -38,9 +38,9 @@ import {
 import { Badge } from "@/components/ui/badge";
 
 const sectionTitles: Record<string, string> = {
-  dashboard: "Studio Command Dashboard",
+  dashboard: "Omnelia SI Studio Dashboard",
   "content-engine": "AI Command Console",
-  "image-gen": "FLUX.2 Image Studio",
+  "image-gen": "FLUX.2 Image Diffuser",
   "video-gen": "Wan 2.1 Video Studio",
   "voice-clone": "Kokoro-82M Voice Studio",
   "music-gen": "MusicGen Audio Studio",
@@ -49,8 +49,8 @@ const sectionTitles: Record<string, string> = {
   podcast: "Podcast Studio",
   "web-builder": "Full-Stack Web Architect",
   "video-edit": "Timeline Video Editor",
-  agents: "Autonomous Agent Fleet & Memory",
-  monetization: "Commercial & Monetization Engine",
+  "ardi-sec": "ARDI Cybersecurity & Asset Defense",
+  agents: "Omnelia Autonomous Fleet",
   workflows: "Workflows & Pipelines",
   autonomous: "Autonomous Tasks",
   automations: "Event Automations",
@@ -71,11 +71,11 @@ const sectionCategories: Record<string, string> = {
   podcast: "Creative Studio",
   "web-builder": "Creative Studio",
   "video-edit": "Creative Studio",
-  agents: "Agents & Memory",
-  monetization: "Commercial OS",
-  workflows: "Agents & Memory",
-  autonomous: "Agents & Memory",
-  automations: "Agents & Memory",
+  "ardi-sec": "Fleet & Security",
+  agents: "Fleet & Security",
+  workflows: "Fleet & Security",
+  autonomous: "Fleet & Security",
+  automations: "Fleet & Security",
   templates: "Resources",
   themes: "Resources",
   layouts: "Resources",
@@ -114,8 +114,8 @@ export default function AIStudio() {
     switch (activeSection) {
       case "dashboard":
         return <StudioDashboard onNavigate={handleSectionChange} />;
-      case "monetization":
-        return <MonetizationAgents />;
+      case "ardi-sec":
+        return <ArdiSecurity />;
       case "image-gen":
         return <ImageGenerator />;
       case "video-gen":
@@ -184,10 +184,10 @@ export default function AIStudio() {
             </div>
 
             <div className="flex items-center gap-2">
-              <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-muted/60 border border-border/50 text-[11px] font-mono">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="text-muted-foreground">Engine:</span>
-                <span className="text-foreground font-semibold">Active · 14 Free OSS Models</span>
+              <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[rgba(14,18,29,0.8)] border border-[rgba(87,241,239,0.2)] text-[11px] font-mono shadow-[0_0_15px_rgba(87,241,239,0.1)]">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#57f1ef] animate-pulse shadow-[0_0_8px_#57f1ef]" />
+                <span className="text-muted-foreground">Omnelia SI Mesh:</span>
+                <span className="text-[#57f1ef] font-semibold">Active · 14 Free OSS Models</span>
               </div>
             </div>
           </header>
